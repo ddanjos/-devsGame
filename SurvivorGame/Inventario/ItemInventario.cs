@@ -6,7 +6,9 @@
         public string Descricao { get; private set; }
         public int Quantidade { get; protected set; }
 
-        protected ItemInventario(string nome, string descricao, int quantidade = 1)
+        public char Simbolo { get; protected set; }
+
+        protected ItemInventario(string nome, string descricao, int quantidade, char simbolo)
         {
             Nome = nome;
             Descricao = descricao;
