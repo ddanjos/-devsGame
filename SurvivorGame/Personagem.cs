@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SurvivorGame.Inventario;
 
 namespace SurvivorGame
 {
@@ -11,16 +9,21 @@ namespace SurvivorGame
         public int Fome { get; private set; }
         public int Sede { get; private set; }
         public int Vida { get; private set; }
-        public Inventario Inventario { get; private set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public InventarioPersonagem Inventario { get; private set; }
 
-        public Personagem(string nome)
+        public Personagem(string nome, int xInicial, int yInicial)
         {
             Nome = nome;
             Experiencia = 0;
             Fome = 0;
             Sede = 0;
             Vida = 100;
-            Inventario = new Inventario();
+            X = xInicial;
+            Y = yInicial;
+
+            Inventario = new InventarioPersonagem(5);
         }
 
     }
