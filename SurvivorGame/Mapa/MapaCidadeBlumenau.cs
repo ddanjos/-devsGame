@@ -19,7 +19,7 @@ namespace SurvivorGame.Mapa
     ///   'O' = Ponte (travessia sobre o rio)
     ///   '=' = Rodovia (via principal, ex: Rod. Jorge Lacerda)
     ///   'E' = ponto de partida do personagem (ProWay, R. Sete de Setembro 1600 - Centro)
-    ///   '*' = ponto turistico (ver dicionario PontosTuristicos)
+    ///   '*' = ponto turistico (ver lista Locais)
     ///
     /// Pontos turisticos pesquisados (fonte: guias de turismo de Blumenau) e
     /// posicionados de acordo com a imagem de referencia do centro da cidade:
@@ -82,19 +82,34 @@ namespace SurvivorGame.Mapa
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF===FFFFFFFFFFFFFFFFFFFFFFFFFF"
         };
 
-        /// <summary>Nome do ponto turistico -> posicao no grid.</summary>
-        public static readonly IReadOnlyDictionary<string, Point> PontosTuristicos = new Dictionary<string, Point>
+        /// <summary>
+        /// Lugares clicáveis no mapa (pontos turísticos + o ProWay, ponto de partida).
+        /// Cada um vira uma "porta de entrada" pra um cenário quando clicado.
+        /// </summary>
+        public static readonly IReadOnlyList<LocalMapa> Locais = new List<LocalMapa>
         {
-            { "Prefeitura Municipal de Blumenau", new Point(39, 7) },
-            { "Catedral Sao Paulo Apostolo", new Point(45, 19) },
-            { "Museu da Cerveja de Blumenau", new Point(58, 22) },
-            { "Museu de Habitos e Costumes", new Point(63, 22) },
-            { "Museu da Familia Colonial", new Point(59, 24) },
-            { "Castelinho da Havan", new Point(63, 26) },
-            { "Mausoleu Dr. Blumenau", new Point(60, 23) },
-            { "Parque Sao Francisco de Assis", new Point(34, 24) },
-            { "Parque Ramiro Ruediger", new Point(8, 6) },
-            { "Museu Hering", new Point(11, 32) }
+            new("ProWay", new Point(47, 28),
+                "Centro de treinamento em tecnologia, comunicacao e negocios na Rua Sete de Setembro. E daqui que a jornada do sobrevivente comeca."),
+            new("Prefeitura Municipal de Blumenau", new Point(39, 7),
+                "Sede do governo municipal, em estilo enxaimel, as margens do rio Itajai-Acu."),
+            new("Catedral Sao Paulo Apostolo", new Point(45, 19),
+                "Templo com vitrais coloridos e uma torre de 45 metros com tres sinos eletronicos, inaugurado em 1958."),
+            new("Museu da Cerveja de Blumenau", new Point(58, 22),
+                "Conta a historia da cultura cervejeira da cidade, bem no comeco da Rua XV de Novembro."),
+            new("Museu de Habitos e Costumes", new Point(63, 22),
+                "Museu pequeno dedicado ao cotidiano dos primeiros colonizadores de Blumenau."),
+            new("Museu da Familia Colonial", new Point(59, 24),
+                "Reconstitui a vida domestica dos imigrantes alemaes que fundaram a cidade."),
+            new("Castelinho da Havan", new Point(63, 26),
+                "Replica da prefeitura de Michelstadt, na Alemanha, construida em 1978 e hoje uma loja de departamentos."),
+            new("Mausoleu Dr. Blumenau", new Point(60, 23),
+                "Guarda os restos mortais do fundador da cidade, Dr. Hermann Bruno Otto Blumenau."),
+            new("Parque Sao Francisco de Assis", new Point(34, 24),
+                "Area verde bem no meio da cidade, um respiro de mata entre o centro historico e o resto do centro."),
+            new("Parque Ramiro Ruediger", new Point(8, 6),
+                "O maior parque publico de Blumenau, com pista de corrida, quadras e area de lazer."),
+            new("Museu Hering", new Point(11, 32),
+                "Conta a historia da familia Hering e da industria textil que ajudou a moldar a cidade.")
         };
 
         public int Largura { get; }

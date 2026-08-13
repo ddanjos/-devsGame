@@ -41,5 +41,24 @@ namespace SurvivorGame.Regras
                 _ => throw new System.InvalidOperationException("Tipo de item desconhecido.")
             };
         }
+
+        /// <summary>
+        /// Usa um item consumível do inventário do jogador (cura Vida) e remove
+        /// uma unidade dele. Por enquanto só Consumivel pode ser "usado" assim -
+        /// Arma/Armadura seriam equipadas, não consumidas.
+        /// Retorna o Consumivel usado (pra montar a mensagem), ou null se o item
+        /// não existir ou não for consumível.
+        /// </summary>
+        public static Consumivel? UsarItem(Personagem jogador, string nomeItem)
+        {
+            var item = jogador.Inventario.Itens
+                .FirstOrDefault(i => i.Nome.Equals(nomeItem, System.StringComparison.OrdinalIgnoreCase));
+
+            if (item is not Consumivel consumivel) return null;
+
+            jogador.Curar(consumivel.Cura);
+            jogador.Inventario.RemoverItem(nomeItem, 1);
+            return consumivel;
+        }
     }
 }
