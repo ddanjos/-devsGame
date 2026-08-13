@@ -35,13 +35,11 @@ namespace SurvivorGame.Regras
         {
             return original switch
             {
-                Consumivel c => new Consumivel(c.Nome, c.Descricao, c.Cura, c.Simbolo, quantidade),
-                Arma a => new Arma(a.Nome, a.Descricao, a.Dano, a.Simbolo),
-                Armadura arm => new Armadura(arm.Nome, arm.Descricao, arm.Defesa, arm.Simbolo),
+                Consumivel c => new Consumivel(c.Nome, c.Descricao, quantidade, c.Simbolo, c.Cura),
+                Arma a => new Arma(a.Nome, a.Descricao, quantidade, a.Dano, a.Simbolo),
+                Armadura arm => new Armadura(arm.Nome, arm.Descricao, quantidade, arm.Defesa, arm.Simbolo),
                 _ => throw new System.InvalidOperationException("Tipo de item desconhecido.")
             };
         }
-    }
-}
     }
 }

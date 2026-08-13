@@ -7,4 +7,16 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Se o "dotnet restore" não achar essas versões exatas, atualizem para as mais
+         recentes listadas em https://www.nuget.org/packages/SadConsole -->
+    <PackageReference Include="SadConsole" Version="10.0.3" />
+    <PackageReference Include="SadConsole.Host.MonoGame" Version="10.0.3" />
+
+    <!-- O SadConsole.Host.MonoGame só faz a "ponte" com o SadConsole; ele NÃO traz o
+         motor MonoGame em si. Sem este pacote, a MonoGame.Framework.dll não existe
+         e o jogo quebra em runtime com FileNotFoundException. -->
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
+  </ItemGroup>
+
 </Project>

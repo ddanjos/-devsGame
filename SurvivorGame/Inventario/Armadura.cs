@@ -4,7 +4,7 @@
     {
         public int Defesa { get; private set; }
 
-        public Armadura(string nome, string descricao, int quantidade, int defesa) : base(nome, descricao, quantidade)
+        public Armadura(string nome, string descricao, int quantidade, int defesa, char simbolo) : base(nome, descricao, quantidade, simbolo)
         {
             Defesa = defesa;
         }
