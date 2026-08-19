@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SurvivorGame")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6d7fc6d588bf21b89e700aa660744b2080821f5a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c0db536acac624e566cf4c2e31ac5289315c8b09")]
 [assembly: System.Reflection.AssemblyProductAttribute("SurvivorGame")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SurvivorGame")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
