@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using SadConsole;
+﻿using SadConsole;
 using SadConsole.Input;
 using SadRogue.Primitives;
 using SurvivorGame.Mapa;
+using System.Text;
 
 namespace SurvivorGame.Cenarios
 {
