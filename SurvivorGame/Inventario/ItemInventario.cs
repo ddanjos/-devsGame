@@ -13,6 +13,7 @@
             Nome = nome;
             Descricao = descricao;
             Quantidade = quantidade;
+            Simbolo = simbolo;
         }
         
         public void IncrementarQuantidade(int quantidade = 1)

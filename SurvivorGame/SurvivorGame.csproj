@@ -7,4 +7,28 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Artes\Inimigos\ratoselvagem.xp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Se o "dotnet restore" não achar essas versões exatas, atualizem para as mais
+         recentes listadas em https://www.nuget.org/packages/SadConsole -->
+    <PackageReference Include="SadConsole" Version="10.10.1" />
+    <PackageReference Include="SadConsole.Extended" Version="10.10.1" />
+    <PackageReference Include="SadConsole.Host.MonoGame" Version="10.10.1" />
+
+    <!-- O SadConsole.Host.MonoGame só faz a "ponte" com o SadConsole; ele NÃO traz o
+         motor MonoGame em si. Sem este pacote, a MonoGame.Framework.dll não existe
+         e o jogo quebra em runtime com FileNotFoundException. -->
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+    <PackageReference Include="SadRex" Version="1.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Artes\Inimigos\ratoselvagem.xp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
