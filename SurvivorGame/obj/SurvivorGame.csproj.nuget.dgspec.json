@@ -1,25 +1,32 @@
 {
   "format": 1,
   "restore": {
-    "/home/larissa/RiderProjects/-devsGame/SurvivorGame/SurvivorGame.csproj": {}
+    "C:\\Users\\moc\\source\\repos\\-devsGame\\SurvivorGame\\SurvivorGame.csproj": {}
   },
   "projects": {
-    "/home/larissa/RiderProjects/-devsGame/SurvivorGame/SurvivorGame.csproj": {
+    "C:\\Users\\moc\\source\\repos\\-devsGame\\SurvivorGame\\SurvivorGame.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/larissa/RiderProjects/-devsGame/SurvivorGame/SurvivorGame.csproj",
+        "projectUniqueName": "C:\\Users\\moc\\source\\repos\\-devsGame\\SurvivorGame\\SurvivorGame.csproj",
         "projectName": "SurvivorGame",
-        "projectPath": "/home/larissa/RiderProjects/-devsGame/SurvivorGame/SurvivorGame.csproj",
-        "packagesPath": "/home/larissa/.nuget/packages/",
-        "outputPath": "/home/larissa/RiderProjects/-devsGame/SurvivorGame/obj/",
+        "projectPath": "C:\\Users\\moc\\source\\repos\\-devsGame\\SurvivorGame\\SurvivorGame.csproj",
+        "packagesPath": "C:\\Users\\moc\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\moc\\source\\repos\\-devsGame\\SurvivorGame\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "/home/larissa/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\moc\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -39,7 +46,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.400"
       },
       "frameworks": {
         "net10.0": {
@@ -48,15 +55,23 @@
           "dependencies": {
             "MonoGame.Framework.DesktopGL": {
               "target": "Package",
-              "version": "[3.8.1.303, )"
+              "version": "[3.8.5.1, )"
             },
             "SadConsole": {
               "target": "Package",
-              "version": "[10.0.3, )"
+              "version": "[10.10.1, )"
+            },
+            "SadConsole.Extended": {
+              "target": "Package",
+              "version": "[10.10.1, )"
             },
             "SadConsole.Host.MonoGame": {
               "target": "Package",
-              "version": "[10.0.3, )"
+              "version": "[10.10.1, )"
+            },
+            "SadRex": {
+              "target": "Package",
+              "version": "[1.0.3, )"
             }
           },
           "imports": [
@@ -70,18 +85,12 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[10.0.10, 10.0.10]"
-            }
-          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.400/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",

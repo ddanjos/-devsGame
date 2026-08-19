@@ -8,7 +8,7 @@ namespace SurvivorGame.Combate
     /// Um inimigo de combate: nome, vida, e as habilidades que ele pode usar
     /// contra o jogador no contra-ataque.
     /// </summary>
-    internal class Inimigo
+    public class Inimigo
     {
         public string Nome { get; }
         public int VidaMaxima { get; }
