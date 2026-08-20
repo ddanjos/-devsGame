@@ -5,27 +5,21 @@ using SadConsole;
 using SadConsole.Input;
 using SadRogue.Primitives;
 using SurvivorGame.Inventario;
+using SurvivorGame.Mapa;
+using SurvivorGame.Regras;
 
 namespace SurvivorGame.Combate
 {
-    /// <summary>
-    /// Tela de combate por turnos, inspirada em Earthbound/Pokémon: só o inimigo
-    /// aparece no "campo de batalha" (nome + HP no topo), com HP/Energia do
-    /// jogador numa interfacezinha embaixo.
-    ///
-    /// Fluxo de cada rodada: jogador escolhe ação -> mensagem do que aconteceu ->
-    /// turno do inimigo -> mensagem -> volta pro menu (ou fim de combate).
-    ///
-    /// As "Fase" abaixo formam uma máquina de estados DENTRO da própria tela -
-    /// outra aplicação do State pattern, dessa vez sem trocar de ScreenObject
-    /// (diferente da troca mapa -> CenarioLocalScreen, que troca o Screen inteiro).
-    /// </summary>
     internal class CombateScreen : ScreenSurface
     {
         private enum Fase { MenuPrincipal, MenuAtaques, MenuItens, VendoStatus, Mensagem, FimDeCombate }
 
         private readonly IScreenObject _telaAnterior;
         private readonly SessaoCombate _sessao;
+        private readonly ScreenSurface? _arteXP;
+        private readonly InimigoNoMapa? _inimigoNoMapa;
+        private readonly MapaInimigos? _mapaInimigos;
+        private readonly Action? _aoSairDoCombate;
 
         private Fase _fase = Fase.MenuPrincipal;
         private int _indiceSelecionado;
@@ -37,17 +31,28 @@ namespace SurvivorGame.Combate
         private Queue<string> _filaMensagens = new();
         private Action? _aoTerminarMensagens;
         private ResultadoCombate _resultadoFinal = ResultadoCombate.EmAndamento;
+        private string _mensagemRecompensa = string.Empty;
 
-        public CombateScreen(Personagem jogador, Inimigo inimigo, IScreenObject telaAnterior, int largura, int altura)
+        // Sobrecarga Principal: Recebe InimigoNoMapa e MapaInimigos para poder removê-lo
+        public CombateScreen(Personagem jogador, InimigoNoMapa inimigoNoMapa, MapaInimigos mapaInimigos, IScreenObject telaAnterior, int largura, int altura, Action? aoSairDoCombate = null)
+            : this(jogador, inimigoNoMapa.DadosCombate, telaAnterior, largura, altura, inimigoNoMapa.ArteXP)
+        {
+            _inimigoNoMapa = inimigoNoMapa;
+            _mapaInimigos = mapaInimigos;
+            _aoSairDoCombate = aoSairDoCombate;
+        }
+
+        public CombateScreen(Personagem jogador, Inimigo inimigo, IScreenObject telaAnterior, int largura, int altura, ScreenSurface? arteXP = null)
             : base(largura, altura)
         {
             _telaAnterior = telaAnterior;
+            _arteXP = arteXP;
             _sessao = new SessaoCombate(jogador, inimigo);
 
             UseKeyboard = true;
             IsFocused = true;
 
-            _sessao.IniciarTurnoJogador(); // primeiro turno é sempre do jogador
+            _sessao.IniciarTurnoJogador();
             Redesenhar();
         }
 
@@ -88,6 +93,8 @@ namespace SurvivorGame.Combate
                 case Fase.FimDeCombate:
                     if (qualquerTecla)
                     {
+                        // Redesenha a tela do overworld para limpar o sprite do inimigo
+                        _aoSairDoCombate?.Invoke();
                         Game.Instance.Screen = _telaAnterior;
                         Game.Instance.Screen!.IsFocused = true;
                     }
@@ -126,7 +133,7 @@ namespace SurvivorGame.Combate
         {
             switch (_indiceSelecionado)
             {
-                case 0: // Atacar
+                case 0:
                     _habilidadesDisponiveis = new List<Habilidade> { _sessao.AtaqueBasico };
                     _habilidadesDisponiveis.AddRange(_sessao.Jogador.HabilidadesEspeciais);
                     _fase = Fase.MenuAtaques;
@@ -134,23 +141,23 @@ namespace SurvivorGame.Combate
                     Redesenhar();
                     break;
 
-                case 1: // Defender
+                case 1:
                     ExecutarAcaoDoJogador(() => _sessao.Defender());
                     break;
 
-                case 2: // Usar Item
+                case 2:
                     _itensDisponiveis = _sessao.Jogador.Inventario.Itens.OfType<Consumivel>().ToList();
                     _fase = Fase.MenuItens;
                     _indiceSelecionado = 0;
                     Redesenhar();
                     break;
 
-                case 3: // Ver Status - NÃO consome o turno
+                case 3:
                     _fase = Fase.VendoStatus;
                     Redesenhar();
                     break;
 
-                case 4: // Fugir - não sofre contra-ataque se der certo
+                case 4:
                     string mensagemFuga = _sessao.Fugir();
                     MostrarMensagens(new[] { mensagemFuga }, () => Finalizar(ResultadoCombate.Fugiu));
                     break;
@@ -177,7 +184,6 @@ namespace SurvivorGame.Combate
             ExecutarAcaoDoJogador(() => _sessao.UsarItem(nomeItem));
         }
 
-        /// <summary>Executa a ação do jogador, mostra a mensagem, e encadeia o turno do inimigo se o combate continuar.</summary>
         private void ExecutarAcaoDoJogador(Func<string> acao)
         {
             string mensagemJogador = acao();
@@ -232,11 +238,19 @@ namespace SurvivorGame.Combate
         private void Finalizar(ResultadoCombate resultado)
         {
             _resultadoFinal = resultado;
+
+            if (resultado == ResultadoCombate.Vitoria && _inimigoNoMapa is not null)
+            {
+                // 1. Remove do repositório do mapa
+                _mapaInimigos?.RemoverInimigo(_inimigoNoMapa);
+
+                // 2. Checa se o inimigo dropou item de missão
+                _mensagemRecompensa = GerenciadorJogo.ProcessarVitoriaInimigo(_sessao.Inimigo.Nome);
+            }
+
             _fase = Fase.FimDeCombate;
             Redesenhar();
         }
-
-        // ---------------------- desenho ----------------------
 
         private void Redesenhar()
         {
@@ -244,6 +258,13 @@ namespace SurvivorGame.Combate
 
             Surface.Print(2, 2, _sessao.Inimigo.Nome, Color.OrangeRed, Color.Black);
             Surface.Print(2, 3, $"HP: {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
+
+            if (_arteXP is not null)
+            {
+                int posX = (Width / 2) - (_arteXP.Width / 2);
+                int posY = 4;
+                _arteXP.Surface.Copy(this.Surface, posX, posY);
+            }
 
             switch (_fase)
             {
@@ -287,7 +308,7 @@ namespace SurvivorGame.Combate
                 case Fase.FimDeCombate:
                     string textoFinal = _resultadoFinal switch
                     {
-                        ResultadoCombate.Vitoria => $"Você derrotou {_sessao.Inimigo.Nome}!",
+                        ResultadoCombate.Vitoria => $"Você derrotou {_sessao.Inimigo.Nome}!{_mensagemRecompensa}",
                         ResultadoCombate.Derrota => $"{_sessao.Jogador.Nome} foi derrotado...",
                         ResultadoCombate.Fugiu => "Você fugiu da batalha.",
                         _ => ""
