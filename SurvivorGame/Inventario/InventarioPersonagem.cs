@@ -3,7 +3,10 @@
     internal class InventarioPersonagem
     {
         private readonly List<ItemInventario> _itens;
-        public IReadOnlyCollection<ItemInventario> Itens => _itens.AsReadOnly();
+
+        /// <summary>IReadOnlyList (não só IReadOnlyCollection) porque a tela de inventário
+        /// precisa indexar por posição (itens[i]) pra navegação com o teclado.</summary>
+        public IReadOnlyList<ItemInventario> Itens => _itens.AsReadOnly();
         public int Capacidade { get; private set; }
 
         public InventarioPersonagem(int capacidade)
@@ -44,6 +47,13 @@
         /// <param name="nomeItem">Nome do item a ser removido.</param>
         /// <param name="quantidade">Quantidade a ser removida (padrão 1).</param>
         /// <returns>True se o item existia e foi processado, False se não foi encontrado.</returns>
+        /// <summary>Sobrecarga de conveniência: mesma coisa que RemoverItem(nome, quantidade),
+        /// mas recebendo o próprio item (útil quando a UI já tem a referência selecionada).</summary>
+        public bool RemoverItem(ItemInventario item, int quantidade = 1)
+        {
+            return item is not null && RemoverItem(item.Nome, quantidade);
+        }
+
         public bool RemoverItem(string nomeItem, int quantidade = 1)
         {
             if (string.IsNullOrWhiteSpace(nomeItem) || quantidade <= 0) return false;

@@ -35,6 +35,9 @@ namespace SurvivorGame.Mapa
                 TileType.Inicio => new Tile(TileType.Inicio, glyph: '@', Color.White, new Color(70, 130, 70), bloqueado: false),
                 TileType.PontoTuristico => new Tile(TileType.PontoTuristico, glyph: '*', Color.Gold, new Color(90, 90, 90), bloqueado: false),
 
+                TileType.Elevador => new Tile(TileType.Elevador, glyph: '=', Color.Cyan, new Color(20, 20, 60), bloqueado: false),
+                TileType.SaidaPredio => new Tile(TileType.SaidaPredio, glyph: '>', Color.Yellow, new Color(40, 30, 20), bloqueado: false),
+
                 _ => throw new ArgumentOutOfRangeException(nameof(tipo), tipo, "Tipo de tile desconhecido")
             };
 

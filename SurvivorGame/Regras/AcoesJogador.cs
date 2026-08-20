@@ -18,9 +18,17 @@ namespace SurvivorGame.Regras
 
             if (itemMochila == null) return false;
 
-            ItemInventario itemParaChao = CriarCopiaItem(itemMochila, quantidade);
+            // Bug corrigido: "quantidade" é o que o CHAMADOR pediu, não o que o
+            // jogador realmente tem. Sem esse clamp, pedir pra dropar 5 unidades de
+            // um item do qual só existiam 2 criava 5 no chão E removia as 2 da
+            // mochila (RemoverItem remove tudo quando quantidade >= o que existe) -
+            // ou seja, duplicava 3 itens do nada.
+            int quantidadeReal = Math.Min(quantidade, itemMochila.Quantidade);
+            if (quantidadeReal <= 0) return false;
 
-            bool removeu = jogador.Inventario.RemoverItem(nomeItem, quantidade);
+            ItemInventario itemParaChao = CriarCopiaItem(itemMochila, quantidadeReal);
+
+            bool removeu = jogador.Inventario.RemoverItem(nomeItem, quantidadeReal);
 
             if (removeu)
             {

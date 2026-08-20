@@ -17,6 +17,12 @@
         Predio,     // quarteirao/edificacao (bloqueia passagem)
         Rodovia,    // via principal (ex: Rod. Jorge Lacerda)
         Inicio,     // ponto de partida do personagem (ProWay)
-        PontoTuristico // marco turistico (museu, mausoleu, ponto historico...)
+        PontoTuristico, // marco turistico (museu, mausoleu, ponto historico...)
+
+        // Usados nos mapas de INTERIOR (ExploracaoScreen) - MapaEscritorioProway e
+        // MapaAndarZero. Nao bloqueiam passagem: sao "gatilhos" de transicao entre
+        // telas, verificados pelo ExploracaoScreen depois de cada movimento.
+        Elevador,    // andar da Proway -> andar 0 (ver IMapa.MapaDestino)
+        SaidaPredio  // andar 0 -> volta pro mapa da cidade (MapaCidadeBlumenau)
     }
 }

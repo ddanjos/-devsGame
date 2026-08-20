@@ -6,7 +6,17 @@ namespace SurvivorGame.Utilitarios;
 
 public static class ArteUtils
 {
-    public static ScreenSurface CarregarArteInimigo(string caminhoXP)
+    public static ScreenSurface CarregarArteInimigo(string caminhoXP) => CarregarXP(caminhoXP);
+
+    /// <summary>
+    /// Mesma coisa que CarregarArteInimigo, só com um nome que deixa claro que
+    /// também serve pra carregar a arte de CENÁRIOS inteiros (não só sprites de
+    /// inimigo) - por exemplo os mapas de interior desenhados pelo Lindomar no
+    /// REXPaint (ver ExploracaoScreen, que mostra essa arte como tela de entrada).
+    /// </summary>
+    public static ScreenSurface CarregarArteCenario(string caminhoXP) => CarregarXP(caminhoXP);
+
+    private static ScreenSurface CarregarXP(string caminhoXP)
     {
         if (!File.Exists(caminhoXP))
         {

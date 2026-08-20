@@ -20,5 +20,30 @@ namespace SurvivorGame.Mapa
 
         bool EhBloqueado(int x, int y);
         void DesenharEm(ScreenSurface superficie);
+
+        /// <summary>
+        /// Tile na posição (x, y). Já existia como método público em
+        /// MapaCidadeBlumenau/MapaMasmorra; subiu pra interface porque o
+        /// ExploracaoScreen (novo) precisa saber o TIPO da célula onde o jogador
+        /// pisou, não só se ela bloqueia passagem (ex: pisou num elevador?).
+        /// </summary>
+        Tile ObterTile(int x, int y);
+
+        /// <summary>
+        /// Se (x, y) for um gatilho de transição pra OUTRO mapa (ex: o elevador do
+        /// escritório leva pro andar 0), devolve o IMapa de destino; caso contrário
+        /// null. Tem implementação padrão porque a maioria dos mapas (cidade,
+        /// masmorra) não tem transição nenhuma - só os mapas de interior
+        /// encadeados (MapaEscritorioProway) precisam sobrescrever isso.
+        /// </summary>
+        IMapa? MapaDestino(int x, int y) => null;
+
+        /// <summary>
+        /// Caminho de um arquivo .xp (REXPaint) pra mostrar como uma "tela de
+        /// entrada" antes de liberar o movimento (ver ExploracaoScreen). null = sem
+        /// arte, entra direto no mapa. Implementação padrão null pelo mesmo motivo
+        /// de MapaDestino acima.
+        /// </summary>
+        string? CaminhoArte => null;
     }
 }

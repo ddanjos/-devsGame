@@ -9,6 +9,13 @@
 
   <ItemGroup>
     <None Remove="Artes\Inimigos\ratoselvagem.xp" />
+    <None Remove="Artes\Icones\icon_apple.xp" />
+    <None Remove="Artes\Icones\icon_armor.xp" />
+    <None Remove="Artes\Icones\icon_weapon.xp" />
+    <None Remove="Artes\Cenarios\mapa_inicio_teste.xp" />
+    <None Remove="Artes\Cenarios\location2.xp" />
+    <None Remove="Artes\Extras\knife.xp" />
+    <None Remove="Artes\Extras\npc_test.xp" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +34,27 @@
 
   <ItemGroup>
     <Content Include="Artes\Inimigos\ratoselvagem.xp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Artes\Icones\icon_apple.xp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Artes\Icones\icon_armor.xp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Artes\Icones\icon_weapon.xp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Artes\Cenarios\mapa_inicio_teste.xp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Artes\Cenarios\location2.xp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Artes\Extras\knife.xp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Artes\Extras\npc_test.xp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
