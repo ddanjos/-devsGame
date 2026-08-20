@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Artes\Inimigos\ratoselvagem.xp" />
-  </ItemGroup>
-
-  <ItemGroup>
     <!-- Se o "dotnet restore" não achar essas versões exatas, atualizem para as mais
          recentes listadas em https://www.nuget.org/packages/SadConsole -->
     <PackageReference Include="SadConsole" Version="10.10.1" />

@@ -15,9 +15,57 @@ namespace SurvivorGame
         public int Y { get; set; }
         public InventarioPersonagem Inventario { get; private set; }
 
-        /// <summary>Dano do ataque basico (desarmado). Quando existir sistema de
-        /// equipar arma, isso pode virar o dano da arma equipada.</summary>
-        public int DanoBase { get; set; } = 10;
+        private const int DanoDesarmado = 10;
+
+        /// <summary>Dano do ataque básico. É o dano desarmado por padrão; quando uma
+        /// Arma é equipada, passa a valer o Dano dela (ver Equipar/Desequipar).</summary>
+        public int DanoBase { get; private set; } = DanoDesarmado;
+
+        public Arma? ArmaEquipada { get; private set; }
+        public Armadura? ArmaduraEquipada { get; private set; }
+
+        /// <summary>Redução de dano recebido, vinda da armadura equipada (0 se nenhuma).</summary>
+        public int Defesa => ArmaduraEquipada?.Defesa ?? 0;
+
+        /// <summary>Itens do inventário que estão atualmente equipados (arma e/ou armadura).</summary>
+        public IEnumerable<ItemInventario> Equipamentos
+        {
+            get
+            {
+                if (ArmaEquipada is not null) yield return ArmaEquipada;
+                if (ArmaduraEquipada is not null) yield return ArmaduraEquipada;
+            }
+        }
+
+        /// <summary>Equipa uma Arma (passa a valer como DanoBase) ou Armadura (passa a reduzir dano recebido).
+        /// Itens que não sejam Arma/Armadura são ignorados - use outro fluxo para consumíveis.</summary>
+        public void Equipar(ItemInventario item)
+        {
+            switch (item)
+            {
+                case Arma arma:
+                    ArmaEquipada = arma;
+                    DanoBase = arma.Dano;
+                    break;
+                case Armadura armadura:
+                    ArmaduraEquipada = armadura;
+                    break;
+            }
+        }
+
+        /// <summary>Desequipa o item passado, se ele for o que está atualmente equipado nesse slot.</summary>
+        public void Desequipar(ItemInventario item)
+        {
+            if (item is Arma && ReferenceEquals(item, ArmaEquipada))
+            {
+                ArmaEquipada = null;
+                DanoBase = DanoDesarmado;
+            }
+            else if (item is Armadura && ReferenceEquals(item, ArmaduraEquipada))
+            {
+                ArmaduraEquipada = null;
+            }
+        }
 
         /// <summary>Ataques especiais que custam Energia em combate. Comeca com um
         /// de exemplo - podem adicionar mais, inclusive por classe de personagem.</summary>
@@ -40,11 +88,13 @@ namespace SurvivorGame
             Inventario = new InventarioPersonagem(5);
         }
 
-        /// <summary>Reduz a Vida, sem deixar passar de 0.</summary>
+        /// <summary>Reduz a Vida pelo dano recebido menos a Defesa da armadura equipada
+        /// (nunca abaixo de 0 de dano), sem deixar a Vida passar de 0.</summary>
         public void ReceberDano(int quantidade)
         {
             if (quantidade <= 0) return;
-            Vida = Math.Max(0, Vida - quantidade);
+            int danoFinal = Math.Max(0, quantidade - Defesa);
+            Vida = Math.Max(0, Vida - danoFinal);
         }
 
         /// <summary>Aumenta a Vida, sem deixar passar de VidaMaxima.</summary>
