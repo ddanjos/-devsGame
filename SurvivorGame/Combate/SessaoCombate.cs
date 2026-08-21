@@ -20,18 +20,35 @@ namespace SurvivorGame.Combate
         public bool Defendendo { get; private set; }
         public Habilidade AtaqueBasico { get; }
 
+        /// <summary>Contador de rodadas do combate - a terminologia pedida pela
+        /// disciplina (Turno, Rodada, Iniciativa...) só existia como "Turno" no
+        /// código; Rodada estava faltando. Uma Rodada = um ciclo completo (turno do
+        /// jogador + contra-ataque do inimigo). Começa em 1 na primeira chamada de
+        /// IniciarTurnoJogador.</summary>
+        public int Rodada { get; private set; }
+
+        /// <summary>Quem age primeiro em cada Rodada. Hoje o jogador sempre tem a
+        /// Iniciativa (o combate não tem stat de Velocidade ainda pra decidir isso
+        /// dinamicamente) - fica exposto como propriedade, e não só um comentário,
+        /// pra já existir um lugar único pra ligar um cálculo de verdade (ex:
+        /// comparando Velocidade de Personagem/Inimigo) quando esse atributo for
+        /// implementado.</summary>
+        public string Iniciativa => Jogador.Nome;
+
         public SessaoCombate(Personagem jogador, Inimigo inimigo)
         {
             Jogador = jogador;
             Inimigo = inimigo;
             Energia = 0;
             Defendendo = false;
+            Rodada = 0;
             AtaqueBasico = new Habilidade("Ataque", jogador.DanoBase);
         }
 
-        /// <summary>Chamem no início de cada turno do jogador (inclusive o primeiro): ganha 1 de Energia e encerra o buff de Defender.</summary>
+        /// <summary>Chamem no início de cada turno do jogador (inclusive o primeiro): abre uma nova Rodada, ganha 1 de Energia e encerra o buff de Defender.</summary>
         public void IniciarTurnoJogador()
         {
+            Rodada++;
             Energia++;
             Defendendo = false;
         }

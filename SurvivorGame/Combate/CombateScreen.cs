@@ -292,6 +292,7 @@ namespace SurvivorGame.Combate
                     break;
 
                 case Fase.VendoStatus:
+                    Surface.Print(2, 5, $"Rodada {_sessao.Rodada}  |  Iniciativa: {_sessao.Iniciativa}", Color.Cyan, Color.Black);
                     Surface.Print(2, 6, $"{_sessao.Inimigo.Nome} - HP {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
                     Surface.Print(2, 8, $"{_sessao.Jogador.Nome} - HP {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}", Color.White, Color.Black);
                     Surface.Print(2, 9, $"Energia: {_sessao.Energia}", Color.Cyan, Color.Black);
@@ -322,7 +323,7 @@ namespace SurvivorGame.Combate
         private void DesenharStatusJogador()
         {
             int y = Height - 10;
-            Surface.Print(2, y, _sessao.Jogador.Nome, Color.LimeGreen, Color.Black);
+            Surface.Print(2, y, $"{_sessao.Jogador.Nome}   Rodada {_sessao.Rodada}   Iniciativa: {_sessao.Iniciativa}", Color.LimeGreen, Color.Black);
             Surface.Print(2, y + 1, $"HP: {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}   Energia: {_sessao.Energia}", Color.White, Color.Black);
         }
 

@@ -1,4 +1,6 @@
-﻿using SadConsole;
+﻿using System;
+using System.Collections.Generic;
+using SadConsole;
 using SadRogue.Primitives;
 
 namespace SurvivorGame.Mapa
@@ -53,5 +55,21 @@ namespace SurvivorGame.Mapa
         /// é óbvio, como a cidade). Ver ExploracaoScreen.Redesenhar.
         /// </summary>
         string? Dica => null;
+
+        /// <summary>
+        /// Pontos especiais deste mapa que reagem à tecla E quando o jogador chega
+        /// perto - elevador, escada, saída pro andar de cima etc. Cada item tem a
+        /// posição e um texto curto pro prompt (ex: "chamar o elevador"). Isso
+        /// generaliza, pros gatilhos de DENTRO de um interior, o mesmo padrão
+        /// "aproximou -> apareceu prompt -> aperta E" que já existia só pra entrar
+        /// nos Locais do mapa da cidade (ver MapaScreen.AtualizarLocalProximo).
+        /// Antes disso, cada saída/elevador só funcionava pisando exatamente numa
+        /// única célula - fácil de errar por um pixel e, com corredores cheios de
+        /// móveis/entulho parecidos com parede, dava a sensação de labirinto sem
+        /// saída visível. Implementação padrão vazia porque a maioria dos mapas
+        /// (cidade, masmorra) não tem esse tipo de gatilho. Ver
+        /// ExploracaoScreen.AtualizarPontoProximo/InteragirComPontoProximo.
+        /// </summary>
+        IReadOnlyList<(Point Posicao, string Rotulo)> PontosInteresse => Array.Empty<(Point, string)>();
     }
 }

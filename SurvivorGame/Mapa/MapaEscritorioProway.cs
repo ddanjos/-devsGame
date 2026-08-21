@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SadConsole;
 using SadRogue.Primitives;
 using SurvivorGame.Utilitarios;
@@ -102,6 +103,15 @@ namespace SurvivorGame.Mapa
         /// se ensinar sozinho, então em vez de deixar o jogador procurando o
         /// elevador sem pista nenhuma, apontamos o objetivo direto.</summary>
         public string? Dica =>
-            "Você está no escritório da ProWay. Ande até o indicador azul no meio do corredor para chamar o elevador.";
+            "Você está no escritório da ProWay. Ande até perto do indicador azul no meio do corredor e aperte E para chamar o elevador.";
+
+        /// <summary>Elevador (desce pro andar 0) e escada (desce pro porão) viram
+        /// prompt de "aperte E" assim que o jogador chega perto - ver comentário em
+        /// IMapa.PontosInteresse.</summary>
+        public IReadOnlyList<(Point Posicao, string Rotulo)> PontosInteresse => new (Point, string)[]
+        {
+            (PosicaoElevador, "chamar o elevador"),
+            (PosicaoEscada, "descer a escada pro porão"),
+        };
     }
 }

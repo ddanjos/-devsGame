@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SadConsole;
 using SadRogue.Primitives;
 using SurvivorGame.Utilitarios;
@@ -38,12 +39,17 @@ namespace SurvivorGame.Mapa
         private static readonly Color CorParede1 = new(77, 77, 77);
         private static readonly Color CorParede2 = new(0, 0, 0);
 
-        // O corredor de entulho (rubble) reusa a MESMA cor cinza das paredes
-        // pra desenhar destroços em alguns pontos - o que sela justamente a
-        // última célula antes da saída. Sem essa exceção pontual (confirmada
-        // por busca em largura, o único cruzamento necessário), a saída fica
-        // impossível de alcançar.
-        private static readonly Point ExcecaoParede = new(25, 58);
+        // O corredor de entulho (rubble) reusa a MESMA cor cinza das paredes pra
+        // desenhar destroços espalhados - o que, célula por célula, forma um
+        // labirinto de verdade (testamos com busca em largura). O problema é que
+        // não tem NENHUM jeito visual de saber qual destroço é andável e qual
+        // bloqueia - o jogador ficaria tentando cada célula no escuro, o que não
+        // é justo. Por isso esse retângulo (o corredor inteiro, da onde as salas
+        // terminam até a borda de baixo) vira sempre andável, ignorando a cor -
+        // as paredes das SALAS continuam bloqueando normalmente, só o corredor
+        // de passagem que vira piso aberto.
+        private static bool NoCorredorDeSaida(int x, int y)
+            => x is >= 24 and <= 34 && y is >= 30 and <= 59;
 
         private readonly ScreenSurface _arte;
 
@@ -64,7 +70,7 @@ namespace SurvivorGame.Mapa
         public bool EhBloqueado(int x, int y)
         {
             if (x < 0 || x >= Largura || y < 0 || y >= Altura) return true;
-            if (new Point(x, y) == ExcecaoParede) return false;
+            if (NoCorredorDeSaida(x, y)) return false;
             Color cor = _arte.Surface.GetBackground(x, y);
             return cor == CorParede1 || cor == CorParede2;
         }
@@ -73,6 +79,15 @@ namespace SurvivorGame.Mapa
             => _arte.Surface.Copy(superficie.Surface, 0, 0);
 
         public string? Dica =>
-            "Você chegou na cafeteria (andar 0). Desça pelo corredor de entulho até o fim para voltar pra rua.";
+            "Você chegou na cafeteria (andar 0). Ignore as mesas e cadeiras dos lados - desça pelo corredor bem no centro da tela até perto da borda de baixo e aperte E para voltar pra rua.";
+
+        /// <summary>A saída também vira prompt de "aperte E" assim que o jogador
+        /// chega perto, além de continuar funcionando ao pisar exatamente em cima
+        /// dela (ver Mover em ExploracaoScreen) - ver comentário em
+        /// IMapa.PontosInteresse.</summary>
+        public IReadOnlyList<(Point Posicao, string Rotulo)> PontosInteresse => new (Point, string)[]
+        {
+            (PosicaoSaida, "sair pro andar de cima"),
+        };
     }
 }

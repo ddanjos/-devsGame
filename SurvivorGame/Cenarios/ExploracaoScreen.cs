@@ -36,6 +36,7 @@ namespace SurvivorGame.Cenarios
         private Point _posicao;
         private bool _explorando;
         private string _mensagem = string.Empty;
+        private (Point Posicao, string Rotulo)? _pontoProximo;
 
         /// <summary>
         /// O tamanho da tela é o tamanho do PRÓPRIO mapa (mapa.Largura/Altura) -
@@ -61,6 +62,8 @@ namespace SurvivorGame.Cenarios
                 : null;
             _explorando = _arteIntroducao is null;
 
+            AtualizarPontoProximo();
+
             UseKeyboard = true;
             IsFocused = true;
 
@@ -83,6 +86,12 @@ namespace SurvivorGame.Cenarios
             if (keyboard.IsKeyPressed(Keys.Escape))
             {
                 VoltarParaTelaAnterior();
+                return true;
+            }
+
+            if (keyboard.IsKeyPressed(Keys.E) && _pontoProximo is not null)
+            {
+                InteragirComPontoProximo();
                 return true;
             }
 
@@ -111,6 +120,7 @@ namespace SurvivorGame.Cenarios
 
             _posicao = new Point(novoX, novoY);
             _mensagem = string.Empty;
+            AtualizarPontoProximo();
 
             // Pegar item do chão, se houver um nessa posição (reaproveita
             // MapaJogo/AdicionarItem, que já existiam mas nunca eram acionados
@@ -158,6 +168,51 @@ namespace SurvivorGame.Cenarios
             Game.Instance.Screen!.IsFocused = true;
         }
 
+        /// <summary>Checa se o jogador ficou a uma célula (incluindo diagonal) de
+        /// algum PontoInteresse do mapa (elevador, escada, saída...) - se sim,
+        /// guarda pra 'E' poder acionar e pro prompt aparecer. Mesma ideia (e
+        /// mesma distância "Chebyshev") do MapaScreen.AtualizarLocalProximo, só que
+        /// aplicada aos gatilhos de DENTRO de um mapa de interior.</summary>
+        private void AtualizarPontoProximo()
+        {
+            _pontoProximo = null;
+            foreach (var ponto in _mapa.PontosInteresse)
+            {
+                int dx = System.Math.Abs(ponto.Posicao.X - _posicao.X);
+                int dy = System.Math.Abs(ponto.Posicao.Y - _posicao.Y);
+                if (System.Math.Max(dx, dy) <= 1)
+                {
+                    _pontoProximo = ponto;
+                    break;
+                }
+            }
+        }
+
+        /// <summary>Aciona o ponto de interesse mais próximo (tecla E). Reaproveita
+        /// exatamente a mesma lógica que já existia em Mover pra quando o jogador
+        /// pisava exatamente na célula: se for a saída do prédio, volta pra tela
+        /// anterior; se for um gatilho de transição (elevador, escada), abre o
+        /// IMapa de destino numa nova ExploracaoScreen.</summary>
+        private void InteragirComPontoProximo()
+        {
+            if (_pontoProximo is null) return;
+            Point posicao = _pontoProximo.Value.Posicao;
+
+            if (_mapa.ObterTile(posicao.X, posicao.Y).Tipo == TileType.SaidaPredio)
+            {
+                VoltarParaTelaAnterior();
+                return;
+            }
+
+            IMapa? proximoMapa = _mapa.MapaDestino(posicao.X, posicao.Y);
+            if (proximoMapa is not null)
+            {
+                var proximaTela = new ExploracaoScreen(proximoMapa, _jogador, _telaAnterior, _itensNoChao);
+                Game.Instance.Screen = proximaTela;
+                Game.Instance.Screen.IsFocused = true;
+            }
+        }
+
         private void Redesenhar()
         {
             Surface.Clear();
@@ -172,16 +227,35 @@ namespace SurvivorGame.Cenarios
             }
 
             _mapa.DesenharEm(this);
+
+            // A arte original do Lindomar (copiada célula por célula acima) não
+            // marca elevador/escada/saída com nada de especial - visualmente são
+            // idênticos ao resto do cenário. Isso é a causa raiz de "não sei como
+            // sair da sala": o jogador só descobria esses pontos por sorte ou lendo
+            // a Dica de texto. Agora todo PontoInteresse ganha um marcador bem
+            // chamativo (asterisco amarelo em fundo vermelho) direto em cima da
+            // arte, visível de longe, sem precisar chegar perto pra saber que ele
+            // existe ali - chegar perto só ainda é necessário pra ATIVAR (tecla E).
+            foreach (var ponto in _mapa.PontosInteresse)
+                Surface.SetGlyph(ponto.Posicao.X, ponto.Posicao.Y, '*', Color.Yellow, Color.Red);
+
             Surface.SetGlyph(_posicao.X, _posicao.Y, '@', Color.LimeGreen, Color.Black);
 
-            Surface.Print(2, Height - 1, "Setas/WASD para mover | ESC para voltar", Color.Gray, Color.Black);
+            Surface.Print(2, Height - 1, "Setas/WASD para mover | E para interagir | ESC para voltar", Color.Gray, Color.Black);
 
-            // A dica inicial (mapa.Dica) pode ser mais longa que uma linha cabe -
-            // quebra em várias linhas, iguais o QuebrarLinhas do CenarioLocalScreen,
-            // impressas de baixo pra cima logo acima do rodapé de controles.
-            if (!string.IsNullOrEmpty(_mensagem))
+            // Perto de um ponto de interesse (elevador, escada, saída...)? Esse
+            // prompt tem prioridade sobre a mensagem comum (dica inicial ou aviso
+            // de item pego) - é a ação mais relevante nesse instante. Pode ser mais
+            // longo que uma linha cabe, então quebra em várias, iguais o
+            // QuebrarLinhas do CenarioLocalScreen, impressas de baixo pra cima logo
+            // acima do rodapé de controles.
+            string textoMensagem = _pontoProximo is not null
+                ? $"Perto: pressione E para {_pontoProximo.Value.Rotulo}."
+                : _mensagem;
+
+            if (!string.IsNullOrEmpty(textoMensagem))
             {
-                List<string> linhas = QuebrarLinhas(_mensagem, Width - 4).ToList();
+                List<string> linhas = QuebrarLinhas(textoMensagem, Width - 4).ToList();
                 int linhaInicial = Height - 1 - linhas.Count;
                 for (int i = 0; i < linhas.Count; i++)
                     Surface.Print(2, linhaInicial + i, linhas[i], Color.Yellow, Color.Black);
