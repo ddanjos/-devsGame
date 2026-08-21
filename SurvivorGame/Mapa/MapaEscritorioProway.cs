@@ -12,15 +12,14 @@ namespace SurvivorGame.Mapa
     /// mapa abstrato ao lado da arte dele. O jogador anda literalmente em cima
     /// do desenho original, 60x60, pixel a pixel.
     ///
-    /// Sobre colisão: o arquivo .xp não marca "isso é parede" em lugar nenhum -
-    /// ele é desenhado só com blocos de cor de fundo preenchendo a tela inteira
-    /// (nenhuma célula fica "vazia"/fora da estrutura), então não existe um sinal
-    /// confiável pra distinguir parede de piso só pela cor. Por isso o andar
-    /// inteiro é caminhável (EhBloqueado só barra fora dos limites do mapa) - o
-    /// que faz sentido pra um escritório de piso aberto. O elevador e a escada
-    /// pro porão são pontos exatos de ativação, posicionados nas coordenadas
-    /// reais de onde o Lindomar desenhou os indicadores (o marcador
-    /// vermelho/azul no meio do corredor, no caso do elevador).
+    /// Sobre colisão: o .xp não marca "isso é parede" com nenhum caractere -
+    /// é tudo desenhado só com cor de fundo. Ainda assim, analisando os pixels
+    /// (script Python, gzip+struct) achamos que a cor (52,52,52) forma
+    /// consistentemente o contorno retangular de cada sala - é a cor de parede
+    /// de verdade. Comparado com a arte renderizada, bate certinho com as
+    /// linhas de parede que dá pra ver a olho nu. Verificamos com um BFS
+    /// (busca em largura) que bloquear essa cor NÃO isola nenhum ponto
+    /// importante do mapa, com uma única exceção documentada abaixo.
     /// </summary>
     internal class MapaEscritorioProway : IMapa
     {
@@ -39,6 +38,18 @@ namespace SurvivorGame.Mapa
         // um porão) - é só um ponto dentro de uma das salas, reaproveitando o
         // MapaMasmorra que já existia pronto no projeto sem uso nenhum.
         private static readonly Point PosicaoEscada = new(10, 10);
+
+        // Cor de parede real, identificada por análise de pixel (ver comentário
+        // da classe). Bloqueia o movimento onde aparecer.
+        private static readonly Color CorParede = new(52, 52, 52);
+
+        // A sala onde fica a escada é cercada por essa cor de parede quase
+        // inteira - só essa ÚNICA célula (confirmada por busca em largura, o
+        // menor número de paredes cruzadas até a escada) liga o corredor
+        // periférico até lá dentro. Sem essa exceção pontual, a escada - e o
+        // porão inteiro - ficariam impossíveis de alcançar. Provavelmente
+        // corresponde a uma porta que o Lindomar desenhou sem destacar a cor.
+        private static readonly Point ExcecaoParede = new(22, 15);
 
         private readonly ScreenSurface _arte;
         private readonly IMapa _andarZero;
@@ -66,7 +77,11 @@ namespace SurvivorGame.Mapa
         }
 
         public bool EhBloqueado(int x, int y)
-            => x < 0 || x >= Largura || y < 0 || y >= Altura;
+        {
+            if (x < 0 || x >= Largura || y < 0 || y >= Altura) return true;
+            if (new Point(x, y) == ExcecaoParede) return false;
+            return _arte.Surface.GetBackground(x, y) == CorParede;
+        }
 
         /// <summary>Copia a arte do Lindomar direto pra tela, célula por célula -
         /// é o mapa em si, não uma ilustração ao lado dele.</summary>

@@ -14,6 +14,15 @@ namespace SurvivorGame.Cenarios
     /// padrão de CombateScreen/CenarioLocalScreen) porque precisávamos de
     /// ProcessKeyboard pra abrir o inventário com a tecla 'I' - uma ScreenSurface
     /// sem subclasse não tem como reagir a uma tecla específica.
+    ///
+    /// O jogador anda de verdade aqui também (setas/WASD), igual à
+    /// ExploracaoScreen - a diferença é que a posição AQUI é _personagem.X/Y
+    /// de verdade (a posição dele no mundo), não uma posição local só desse
+    /// mapa. Colisão vem do próprio _terreno.EhBloqueado (prédio e água
+    /// bloqueiam; rua, calçada, praça e ponte não). Ao ficar perto de um
+    /// Local (ProWay etc.), aparece um prompt pra apertar 'E' e entrar - não
+    /// entra sozinho só de encostar, pra não ser fácil de ativar sem querer.
+    /// O clique do mouse continua funcionando (compatibilidade + combate).
     /// </summary>
     internal class MapaScreen : ScreenSurface
     {
@@ -21,6 +30,9 @@ namespace SurvivorGame.Cenarios
         private readonly MapaJogo _itensNoChao;
         private readonly MapaInimigos _inimigosNoMapa;
         private readonly Personagem _personagem;
+
+        private LocalMapa? _localProximo;
+        private string _mensagem = string.Empty;
 
         public MapaScreen(IMapa terreno, MapaJogo itensNoChao, MapaInimigos inimigosNoMapa, Personagem personagem)
             : base(terreno.Largura, terreno.Altura)
@@ -34,6 +46,7 @@ namespace SurvivorGame.Cenarios
             UseKeyboard = true;
             MouseButtonClicked += MapaTela_MouseButtonClicked;
 
+            AtualizarLocalProximo();
             RedesenharMapaCompleto();
         }
 
@@ -46,7 +59,59 @@ namespace SurvivorGame.Cenarios
                 return true;
             }
 
-            return base.ProcessKeyboard(keyboard);
+            if (keyboard.IsKeyPressed(Keys.E) && _localProximo is not null)
+            {
+                EntrarEm(_localProximo);
+                return true;
+            }
+
+            int dx = 0, dy = 0;
+            if (keyboard.IsKeyPressed(Keys.Up) || keyboard.IsKeyPressed(Keys.W)) dy = -1;
+            else if (keyboard.IsKeyPressed(Keys.Down) || keyboard.IsKeyPressed(Keys.S)) dy = 1;
+            else if (keyboard.IsKeyPressed(Keys.Left) || keyboard.IsKeyPressed(Keys.A)) dx = -1;
+            else if (keyboard.IsKeyPressed(Keys.Right) || keyboard.IsKeyPressed(Keys.D)) dx = 1;
+
+            if (dx != 0 || dy != 0)
+                Mover(dx, dy);
+
+            return true;
+        }
+
+        private void Mover(int dx, int dy)
+        {
+            int novoX = _personagem.X + dx;
+            int novoY = _personagem.Y + dy;
+
+            if (novoX < 0 || novoY < 0 || novoX >= _terreno.Largura || novoY >= _terreno.Altura)
+                return;
+
+            if (_terreno.EhBloqueado(novoX, novoY))
+                return;
+
+            _personagem.X = novoX;
+            _personagem.Y = novoY;
+
+            AtualizarLocalProximo();
+            RedesenharMapaCompleto();
+        }
+
+        /// <summary>Checa se o jogador ficou a uma célula (incluindo diagonal) de
+        /// algum Local - se sim, guarda pra 'E' poder entrar e mostra o prompt.
+        /// Distância "Chebyshev" (a maior entre dx e dy) é o jeito certo de medir
+        /// "vizinho, incluindo diagonal" numa grade - diferente da distância reta,
+        /// que exageraria a diagonal.</summary>
+        private void AtualizarLocalProximo()
+        {
+            _localProximo = MapaCidadeBlumenau.Locais.FirstOrDefault(l =>
+            {
+                int dx = System.Math.Abs(l.Posicao.X - _personagem.X);
+                int dy = System.Math.Abs(l.Posicao.Y - _personagem.Y);
+                return System.Math.Max(dx, dy) <= 1;
+            });
+
+            _mensagem = _localProximo is not null
+                ? $"Perto de {_localProximo.Nome}. Pressione E para entrar, ou continue andando."
+                : string.Empty;
         }
 
         private void MapaTela_MouseButtonClicked(object? sender, MouseScreenObjectState state)
@@ -71,27 +136,36 @@ namespace SurvivorGame.Cenarios
                 return;
             }
 
+            // Clique continua funcionando como atalho (compatibilidade com quem já
+            // tinha o hábito) - mas o jeito "oficial" agora é andar até ficar perto
+            // e apertar E, ver ProcessKeyboard/AtualizarLocalProximo.
             LocalMapa? local = MapaCidadeBlumenau.Locais
                 .FirstOrDefault(l => l.Posicao == celulaClicada);
 
             if (local is not null)
-            {
-                // ProWay é o único Local que hoje tem interior jogável (o andar
-                // desenhado pelo Lindomar + o andar 0 encadeado via elevador) - os
-                // outros continuam só com a telinha de descrição de sempre.
-                if (local.Nome == "ProWay")
-                {
-                    var escritorio = new MapaEscritorioProway();
-                    var exploracao = new ExploracaoScreen(escritorio, _personagem, this);
-                    Game.Instance.Screen = exploracao;
-                    Game.Instance.Screen.IsFocused = true;
-                    return;
-                }
+                EntrarEm(local);
+        }
 
-                var cenario = new CenarioLocalScreen(local, this, Width, Height);
-                Game.Instance.Screen = cenario;
+        /// <summary>Abre o cenário de um Local - o escritório jogável da ProWay, ou
+        /// a telinha de descrição padrão pros demais. Compartilhado entre o prompt
+        /// de proximidade (tecla E) e o clique do mouse.</summary>
+        private void EntrarEm(LocalMapa local)
+        {
+            // ProWay é o único Local que hoje tem interior jogável (o andar
+            // desenhado pelo Lindomar + o andar 0 encadeado via elevador) - os
+            // outros continuam só com a telinha de descrição de sempre.
+            if (local.Nome == "ProWay")
+            {
+                var escritorio = new MapaEscritorioProway();
+                var exploracao = new ExploracaoScreen(escritorio, _personagem, this);
+                Game.Instance.Screen = exploracao;
                 Game.Instance.Screen.IsFocused = true;
+                return;
             }
+
+            var cenario = new CenarioLocalScreen(local, this, Width, Height);
+            Game.Instance.Screen = cenario;
+            Game.Instance.Screen.IsFocused = true;
         }
 
         /// <summary>Redesenha terreno + itens no chão + inimigos + jogador, nessa ordem
@@ -108,6 +182,10 @@ namespace SurvivorGame.Cenarios
                 Surface.SetGlyph(inimigo.X, inimigo.Y, inimigo.Simbolo, inimigo.Cor, Color.Black);
 
             Surface.SetGlyph(_personagem.X, _personagem.Y, '@', Color.LimeGreen, Color.Black);
+
+            Surface.Print(2, Height - 1, "Setas/WASD para mover | I para inventário", Color.Gray, Color.Black);
+            if (!string.IsNullOrEmpty(_mensagem))
+                Surface.Print(2, Height - 2, _mensagem, Color.Yellow, Color.Black);
         }
     }
 }

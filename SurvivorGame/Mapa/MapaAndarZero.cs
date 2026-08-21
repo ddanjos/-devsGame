@@ -16,11 +16,12 @@ namespace SurvivorGame.Mapa
     /// ExploracaoScreen reconhece o TileType.SaidaPredio direto e volta pra tela
     /// anterior (a cidade). Ver ExploracaoScreen.Mover.
     ///
-    /// Mesma ressalva do MapaEscritorioProway sobre colisão: o .xp não marca
-    /// paredes, só cor de fundo preenchendo a tela inteira - por isso o andar
-    /// inteiro é caminhável, e a saída é um ponto exato de ativação na
-    /// extremidade de baixo do corredor de entulho que o Lindomar desenhou
-    /// descendo no meio da imagem.
+    /// Mesma ideia do MapaEscritorioProway sobre colisão: analisamos os pixels
+    /// do .xp e achamos duas cores que formam paredes de verdade aqui - o
+    /// contorno cinza (77,77,77) que fecha a cafeteria e os balcões, e uma
+    /// faixa preta (0,0,0) que é claramente um pilar/divisória sólida numa das
+    /// salas. Confirmamos por busca em largura que isso não isola a saída, com
+    /// uma exceção pontual documentada abaixo.
     /// </summary>
     internal class MapaAndarZero : IMapa
     {
@@ -31,6 +32,18 @@ namespace SurvivorGame.Mapa
         // fim do corredor de entulho que desce até a borda de baixo do desenho.
         private static readonly Point PosicaoEntrada = new(29, 3);
         private static readonly Point PosicaoSaida = new(25, 59);
+
+        // Cores de parede reais, identificadas por análise de pixel (ver
+        // comentário da classe).
+        private static readonly Color CorParede1 = new(77, 77, 77);
+        private static readonly Color CorParede2 = new(0, 0, 0);
+
+        // O corredor de entulho (rubble) reusa a MESMA cor cinza das paredes
+        // pra desenhar destroços em alguns pontos - o que sela justamente a
+        // última célula antes da saída. Sem essa exceção pontual (confirmada
+        // por busca em largura, o único cruzamento necessário), a saída fica
+        // impossível de alcançar.
+        private static readonly Point ExcecaoParede = new(25, 58);
 
         private readonly ScreenSurface _arte;
 
@@ -49,7 +62,12 @@ namespace SurvivorGame.Mapa
             => new Point(x, y) == PosicaoSaida ? TileFactory.Criar(TileType.SaidaPredio) : TileFactory.Criar(TileType.Chao);
 
         public bool EhBloqueado(int x, int y)
-            => x < 0 || x >= Largura || y < 0 || y >= Altura;
+        {
+            if (x < 0 || x >= Largura || y < 0 || y >= Altura) return true;
+            if (new Point(x, y) == ExcecaoParede) return false;
+            Color cor = _arte.Surface.GetBackground(x, y);
+            return cor == CorParede1 || cor == CorParede2;
+        }
 
         public void DesenharEm(ScreenSurface superficie)
             => _arte.Surface.Copy(superficie.Surface, 0, 0);
