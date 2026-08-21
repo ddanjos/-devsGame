@@ -154,9 +154,13 @@ namespace SurvivorGame.UI
         {
             Surface.Clear();
 
-            // Cabeçalho
+            // Painel de status do personagem (SCRUM-12): antes só o HP aparecia
+            // aqui, mesmo com Fome, Sede, Força e Defesa já existindo no
+            // Personagem. Equipar uma arma ou armadura muda Força/Defesa na hora,
+            // porque estes valores são lidos direto do personagem a cada redesenho.
             Surface.Print(2, 1, "=== INVENTÁRIO DO SOBREVIVENTE ===", Color.Yellow, Color.Black);
-            Surface.Print(2, 2, $"HP: {_jogador.Vida}/{_jogador.VidaMaxima}", Color.LimeGreen, Color.Black);
+            Surface.Print(2, 2, $"Nível {_jogador.Nivel}   HP: {_jogador.Vida}/{_jogador.VidaMaxima}", Color.LimeGreen, Color.Black);
+            Surface.Print(2, 3, $"Fome: {_jogador.Fome}   Sede: {_jogador.Sede}   Dano: {_jogador.DanoBase}   Forca: {_jogador.Forca}   Defesa: {_jogador.Defesa}", Color.White, Color.Black);
 
             // Coluna Esquerda: Itens da Mochila
             Surface.Print(2, 4, "--- Mochila ---", Color.Cyan, Color.Black);

@@ -32,8 +32,35 @@ namespace SurvivorGame
         public Arma? ArmaEquipada { get; private set; }
         public Armadura? ArmaduraEquipada { get; private set; }
 
-        /// <summary>Redução de dano recebido, vinda da armadura equipada (0 se nenhuma).</summary>
-        public int Defesa => ArmaduraEquipada?.Defesa ?? 0;
+        /// <summary>
+        /// Força do personagem (SCRUM-7, pedido do Henrique): soma ao dano de cada
+        /// golpe, ponto a ponto. Fórmula completa em SessaoCombate.Atacar:
+        ///     Dano Final = (dano do golpe + Forca) - Defesa do alvo
+        /// É um atributo do PERSONAGEM, separado do dano da arma - a arma entra
+        /// como "dano do golpe" via DanoBase. Fica com set público pra um sistema
+        /// de nível/experiência poder aumentá-la depois.
+        /// </summary>
+        public int Forca { get; set; } = ForcaInicial;
+
+        /// <summary>Defesa própria do personagem, sem contar equipamento. Separada
+        /// pra um buff temporário ou ganho de nível poder mexer nela sem afetar a
+        /// armadura.</summary>
+        public int DefesaBase { get; set; }
+
+        private const int ForcaInicial = 5;
+
+        /// <summary>
+        /// Nível do personagem, derivado da Experiencia (SCRUM-12 pede que ele
+        /// apareça no painel de status, "preparando pro sistema futuro de
+        /// experiência"). A cada 100 de experiência sobe um nível. Nada concede
+        /// experiência ainda - por isso fica em 1 até alguém implementar isso,
+        /// mas a conta já está pronta e o painel já mostra.
+        /// </summary>
+        public int Nivel => 1 + (Experiencia / 100);
+
+        /// <summary>Redução de dano recebido: a defesa própria mais a da armadura
+        /// equipada. Cada ponto tira 1 de dano (regra do Henrique).</summary>
+        public int Defesa => DefesaBase + (ArmaduraEquipada?.Defesa ?? 0);
 
         /// <summary>Itens do inventário que estão atualmente equipados (arma e/ou armadura).</summary>
         public IEnumerable<ItemInventario> Equipamentos
@@ -96,13 +123,16 @@ namespace SurvivorGame
             Inventario = new InventarioPersonagem(5);
         }
 
-        /// <summary>Reduz a Vida pelo dano recebido menos a Defesa da armadura equipada
-        /// (nunca abaixo de 0 de dano), sem deixar a Vida passar de 0.</summary>
+        /// <summary>
+        /// Aplica dano JÁ CALCULADO (a Defesa entra na fórmula do SessaoCombate,
+        /// não aqui - descontar duas vezes deixaria o personagem quase imune).
+        /// Mantido separado de ReceberDanoDireto por clareza de intenção: este é o
+        /// dano "normal" de combate; o outro é inanição, que ignora armadura.
+        /// </summary>
         public void ReceberDano(int quantidade)
         {
             if (quantidade <= 0) return;
-            int danoFinal = Math.Max(0, quantidade - Defesa);
-            Vida = Math.Max(0, Vida - danoFinal);
+            Vida = Math.Max(0, Vida - quantidade);
         }
 
         /// <summary>Aumenta a Vida, sem deixar passar de VidaMaxima.</summary>

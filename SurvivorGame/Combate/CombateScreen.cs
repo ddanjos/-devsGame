@@ -313,6 +313,17 @@ namespace SurvivorGame.Combate
                     _mapaInimigos?.RemoverInimigo(_inimigoNoMapa);
 
                 _mensagemRecompensa = GerenciadorJogo.ProcessarVitoriaInimigo(_sessao.Inimigo.Nome);
+
+                // Drop de item do próprio inimigo (SCRUM-17). Diferente das peças
+                // do rádio, que são progresso de missão, este é só recurso de
+                // sobrevivência - e pode falhar se a mochila estiver cheia.
+                if (_sessao.Inimigo.ItemDrop is not null)
+                {
+                    bool coletou = _sessao.Jogador.Inventario.AdicionarItem(_sessao.Inimigo.ItemDrop);
+                    _mensagemRecompensa += coletou
+                        ? $" Encontrou: {_sessao.Inimigo.ItemDrop.Nome}."
+                        : $" {_sessao.Inimigo.ItemDrop.Nome} ficou pra trás - mochila cheia.";
+                }
             }
 
             _fase = Fase.FimDeCombate;
@@ -361,8 +372,10 @@ namespace SurvivorGame.Combate
                 case Fase.VendoStatus:
                     Surface.Print(2, 5, $"Rodada {_sessao.Rodada}  |  Iniciativa: {_sessao.Iniciativa}", Color.Cyan, Color.Black);
                     Surface.Print(2, 6, $"{_sessao.Inimigo.Nome} - HP {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
-                    Surface.Print(2, 8, $"{_sessao.Jogador.Nome} - HP {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}", Color.White, Color.Black);
-                    Surface.Print(2, 9, $"Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.Cyan, Color.Black);
+                    Surface.Print(2, 7, $"   Forca: {_sessao.Inimigo.Forca}   Defesa: {_sessao.Inimigo.Defesa}", Color.Gray, Color.Black);
+                    Surface.Print(2, 9, $"{_sessao.Jogador.Nome} - HP {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}", Color.White, Color.Black);
+                    Surface.Print(2, 10, $"   Forca: {_sessao.Jogador.Forca}   Defesa: {_sessao.Jogador.Defesa}", Color.Gray, Color.Black);
+                    Surface.Print(2, 11, $"Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.Cyan, Color.Black);
                     Surface.Print(2, Height - 1, "Pressione qualquer tecla para voltar (seu turno continua)", Color.Gray, Color.Black);
                     break;
 

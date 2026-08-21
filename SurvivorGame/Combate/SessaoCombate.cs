@@ -79,6 +79,17 @@ namespace SurvivorGame.Combate
             }
         }
 
+        /// <summary>
+        /// Fórmula de dano do jogo, definida pelo Henrique no SCRUM-7:
+        ///     Dano Final = (dano do golpe + Força de quem ataca) - Defesa do alvo
+        /// Nunca abaixo de DanoMinimo, senão um alvo com defesa alta viraria
+        /// invencível e o combate travaria sem ninguém conseguir vencer.
+        /// </summary>
+        private const int DanoMinimo = 1;
+
+        private static int CalcularDano(int danoDoGolpe, int forcaAtacante, int defesaAlvo)
+            => Math.Max(DanoMinimo, danoDoGolpe + forcaAtacante - defesaAlvo);
+
         /// <summary>Usa uma habilidade (ataque básico ou especial) contra o inimigo.</summary>
         public string Atacar(Habilidade habilidade)
         {
@@ -86,8 +97,11 @@ namespace SurvivorGame.Combate
                 return $"Energia insuficiente para usar {habilidade.Nome}.";
 
             Energia -= habilidade.CustoEnergia;
-            Inimigo.ReceberDano(habilidade.Dano);
-            return $"{Jogador.Nome} usou {habilidade.Nome} causando {habilidade.Dano} de dano.";
+
+            int dano = CalcularDano(habilidade.Dano, Jogador.Forca, Inimigo.Defesa);
+            Inimigo.ReceberDano(dano);
+
+            return $"{Jogador.Nome} usou {habilidade.Nome} causando {dano} de dano.";
         }
 
         /// <summary>Reduz o próximo dano do inimigo pela metade. O buff acaba quando o próximo turno do jogador começa.</summary>
@@ -114,18 +128,33 @@ namespace SurvivorGame.Combate
             return $"{Jogador.Nome} fugiu da batalha!";
         }
 
-        /// <summary>O inimigo escolhe uma habilidade aleatória e ataca. Dano reduzido pela metade se o jogador estiver defendendo.</summary>
+        /// <summary>
+        /// O inimigo sorteia um dos seus ataques e usa. Se for uma "ação nula"
+        /// (ver AtaqueInimigo.EhAcaoNula), só o texto engraçado aparece e nenhum
+        /// dano é aplicado - é a piada do Earthbound que a spec do SCRUM-17 pede.
+        /// Senão, aplica a fórmula e reduz pela metade se o jogador defendeu.
+        /// </summary>
         public string TurnoInimigo()
         {
-            if (Inimigo.Habilidades.Count == 0)
+            if (Inimigo.Ataques.Count == 0)
                 return $"{Inimigo.Nome} não fez nada.";
 
-            Habilidade habilidade = Inimigo.Habilidades[Random.Shared.Next(Inimigo.Habilidades.Count)];
-            int dano = Defendendo ? habilidade.Dano / 2 : habilidade.Dano;
+            AtaqueInimigo ataque = Inimigo.Ataques[Random.Shared.Next(Inimigo.Ataques.Count)];
+
+            if (ataque.EhAcaoNula)
+                return ataque.MensagemAtaque;
+
+            int dano = CalcularDano(ataque.DanoBase, Inimigo.Forca, Jogador.Defesa);
+            if (Defendendo)
+                dano = Math.Max(DanoMinimo, dano / 2);
 
             Jogador.ReceberDano(dano);
 
-            return $"{Inimigo.Nome} usou {habilidade.Nome} dando {dano} de dano.";
+            // A mensagem do ataque pode ter um {0} pro dano; se não tiver, cai no
+            // texto padrão pra nunca ficar sem log nenhum no combate.
+            return ataque.MensagemAtaque.Contains("{0}")
+                ? string.Format(ataque.MensagemAtaque, dano)
+                : $"{Inimigo.Nome} usou {ataque.NomeAtaque} dando {dano} de dano.";
         }
 
         public ResultadoCombate VerificarResultado()
