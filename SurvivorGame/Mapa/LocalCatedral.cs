@@ -1,0 +1,82 @@
+using System.Collections.Generic;
+using SurvivorGame.Inventario;
+
+namespace SurvivorGame.Mapa
+{
+    /// <summary>
+    /// Catedral São Paulo Apóstolo - o easter egg do jogo (ideia que já estava no
+    /// backlog do time, SCRUM-15: "segredinhos escondidos para tornar a exploração
+    /// mais divertida e viciante").
+    ///
+    /// Tem classe própria (em vez de usar LocalCidade) por um motivo real: guarda
+    /// ESTADO entre visitas. Cada vez que o jogador toca o sino, um dos três sinos
+    /// responde; na terceira vez a melodia completa toca e revela um item escondido.
+    /// Nada avisa o jogador disso - a recompensa é pra quem insiste, que é o ponto
+    /// de um easter egg.
+    /// </summary>
+    internal class LocalCatedral : ILocalExploravel
+    {
+        public string Nome => "Catedral São Paulo Apóstolo";
+
+        public string Descricao =>
+            "Os vitrais coloridos ainda filtram luz estranha sobre os bancos vazios. " +
+            "Às vezes, sem ninguém tocar em nada, um dos sinos eletrônicos solta uma " +
+            "nota sozinho - energia residual, ou vontade própria.";
+
+        public IReadOnlyList<AcaoLocal> Acoes { get; }
+
+        /// <summary>Quantas vezes o jogador já tocou o sino. É o estado que
+        /// justifica esta classe existir separada da LocalCidade genérica.</summary>
+        private int _vezesQueTocouOSino;
+
+        private bool _segredoJaRevelado;
+
+        public LocalCatedral()
+        {
+            Acoes = new[]
+            {
+                new AcaoLocal("Tocar o sino", custoFome: 2, custoSede: 2, TocarSino),
+
+                new AcaoLocal("Sentar num banco e recuperar o fôlego", custoFome: 3, custoSede: 3, jogador =>
+                {
+                    jogador.Curar(10);
+                    return new ResultadoAcao
+                    {
+                        Mensagem = "O silêncio aqui dentro acalma. Você recupera 10 de vida."
+                    };
+                }),
+
+                new AcaoLocal("Voltar pra rua", custoFome: 0, custoSede: 0, jogador =>
+                    new ResultadoAcao { Mensagem = string.Empty, VoltarParaAnterior = true }),
+            };
+        }
+
+        private ResultadoAcao TocarSino(Personagem jogador)
+        {
+            if (_segredoJaRevelado)
+                return new ResultadoAcao { Mensagem = "Os sinos já contaram o que tinham pra contar." };
+
+            _vezesQueTocouOSino++;
+
+            if (_vezesQueTocouOSino == 1)
+                return new ResultadoAcao { Mensagem = "Uma nota grave ecoa pela nave vazia. Só uma. Os outros dois sinos ficam quietos." };
+
+            if (_vezesQueTocouOSino == 2)
+                return new ResultadoAcao { Mensagem = "Dois sinos respondem dessa vez, quase juntos. Parece que falta um." };
+
+            _segredoJaRevelado = true;
+
+            var cantil = new Consumivel("Cantil do Padre",
+                "Um cantil de metal, cheio até a boca. Alguém guardou com carinho.", 1, 'u', cura: 30);
+            bool coletou = jogador.Inventario.AdicionarItem(cantil);
+            jogador.RestaurarSede(20);
+
+            return new ResultadoAcao
+            {
+                Mensagem = coletou
+                    ? "Os três sinos tocam juntos uma melodia inteira. Atrás do altar, um painel solto revela um esconderijo: o Cantil do Padre, cheio de água limpa!"
+                    : "Os três sinos tocam juntos! Atrás do altar tem um cantil escondido - mas sua mochila está cheia demais pra levá-lo."
+            };
+        }
+    }
+}

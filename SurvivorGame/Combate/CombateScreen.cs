@@ -93,6 +93,17 @@ namespace SurvivorGame.Combate
                 case Fase.FimDeCombate:
                     if (qualquerTecla)
                     {
+                        // Derrota = fim de jogo de verdade. Antes disso, perder um
+                        // combate só devolvia o jogador ao mapa com a vida zerada,
+                        // e o jogo continuava normalmente - não existia derrota.
+                        if (_resultadoFinal == ResultadoCombate.Derrota)
+                        {
+                            Game.Instance.Screen = new Cenarios.FimDeJogoScreen(
+                                venceu: false, Cenarios.FimDeJogoScreen.TextoDerrota, Width, Height);
+                            Game.Instance.Screen.IsFocused = true;
+                            return true;
+                        }
+
                         // Redesenha a tela do overworld para limpar o sprite do inimigo
                         _aoSairDoCombate?.Invoke();
                         Game.Instance.Screen = _telaAnterior;
@@ -205,6 +216,22 @@ namespace SurvivorGame.Combate
                 else
                 {
                     _sessao.IniciarTurnoJogador();
+
+                    // A inanição/desidratação acontece no início do turno e PODE
+                    // matar - por isso checa o resultado de novo aqui, senão o
+                    // jogador continuaria jogando com a vida em 0.
+                    if (!string.IsNullOrEmpty(_sessao.AvisoDeEstado))
+                    {
+                        MostrarMensagens(new[] { _sessao.AvisoDeEstado }, () =>
+                        {
+                            if (_sessao.VerificarResultado() != ResultadoCombate.EmAndamento)
+                                Finalizar(_sessao.VerificarResultado());
+                            else
+                                VoltarParaMenuPrincipal();
+                        });
+                        return;
+                    }
+
                     VoltarParaMenuPrincipal();
                 }
             });
@@ -239,12 +266,17 @@ namespace SurvivorGame.Combate
         {
             _resultadoFinal = resultado;
 
-            if (resultado == ResultadoCombate.Vitoria && _inimigoNoMapa is not null)
+            // A recompensa de missão precisa valer pra QUALQUER vitória, não só
+            // combate contra um inimigo que já estava desenhado no mapa
+            // (_inimigoNoMapa) - antes disso ficava preso atrás do "is not null" e
+            // um encontro aleatório (ex: LocalAndarZero, ver Mapa/PontosInteresse/
+            // ResultadoAcao) nunca dava a recompensa. Só a remoção do sprite do
+            // mapa (que só existe se ele veio de lá) continua condicional.
+            if (resultado == ResultadoCombate.Vitoria)
             {
-                // 1. Remove do repositório do mapa
-                _mapaInimigos?.RemoverInimigo(_inimigoNoMapa);
+                if (_inimigoNoMapa is not null)
+                    _mapaInimigos?.RemoverInimigo(_inimigoNoMapa);
 
-                // 2. Checa se o inimigo dropou item de missão
                 _mensagemRecompensa = GerenciadorJogo.ProcessarVitoriaInimigo(_sessao.Inimigo.Nome);
             }
 
@@ -295,7 +327,7 @@ namespace SurvivorGame.Combate
                     Surface.Print(2, 5, $"Rodada {_sessao.Rodada}  |  Iniciativa: {_sessao.Iniciativa}", Color.Cyan, Color.Black);
                     Surface.Print(2, 6, $"{_sessao.Inimigo.Nome} - HP {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
                     Surface.Print(2, 8, $"{_sessao.Jogador.Nome} - HP {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}", Color.White, Color.Black);
-                    Surface.Print(2, 9, $"Energia: {_sessao.Energia}", Color.Cyan, Color.Black);
+                    Surface.Print(2, 9, $"Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.Cyan, Color.Black);
                     Surface.Print(2, Height - 1, "Pressione qualquer tecla para voltar (seu turno continua)", Color.Gray, Color.Black);
                     break;
 
@@ -324,7 +356,7 @@ namespace SurvivorGame.Combate
         {
             int y = Height - 10;
             Surface.Print(2, y, $"{_sessao.Jogador.Nome}   Rodada {_sessao.Rodada}   Iniciativa: {_sessao.Iniciativa}", Color.LimeGreen, Color.Black);
-            Surface.Print(2, y + 1, $"HP: {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}   Energia: {_sessao.Energia}", Color.White, Color.Black);
+            Surface.Print(2, y + 1, $"HP: {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}   Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.White, Color.Black);
         }
 
         private void DesenharMenu(IReadOnlyList<string> opcoes, int yInicial)

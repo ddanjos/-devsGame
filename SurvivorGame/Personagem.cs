@@ -17,6 +17,14 @@ namespace SurvivorGame
 
         private const int DanoDesarmado = 10;
 
+        /// <summary>Fome/Sede são recursos que se GASTAM (SCRUM-9: "cada ação vai
+        /// gastar uma quantidade de Fome e Sede"; Henrique no combate: "a cada
+        /// turno... consome 1 ponto de Fome e Sede, se algum chegar a 0 o
+        /// personagem começa a tomar dano") - por isso começam CHEIOS (100), não
+        /// em 0 como estava antes. Zero = passando fome/sede de verdade.</summary>
+        public const int FomeMaxima = 100;
+        public const int SedeMaxima = 100;
+
         /// <summary>Dano do ataque básico. É o dano desarmado por padrão; quando uma
         /// Arma é equipada, passa a valer o Dano dela (ver Equipar/Desequipar).</summary>
         public int DanoBase { get; private set; } = DanoDesarmado;
@@ -78,8 +86,8 @@ namespace SurvivorGame
         {
             Nome = nome;
             Experiencia = 0;
-            Fome = 0;
-            Sede = 0;
+            Fome = FomeMaxima;
+            Sede = SedeMaxima;
             VidaMaxima = 100;
             Vida = 100;
             X = xInicial;
@@ -102,6 +110,57 @@ namespace SurvivorGame
         {
             if (quantidade <= 0) return;
             Vida = Math.Min(VidaMaxima, Vida + quantidade);
+        }
+
+        /// <summary>Gasta Fome (ex: ação do SCRUM-9, ou 1 ponto por rodada de
+        /// combate), sem deixar passar de 0. Ver comentário em FomeMaxima.</summary>
+        public void ConsumirFome(int quantidade)
+        {
+            if (quantidade <= 0) return;
+            Fome = Math.Max(0, Fome - quantidade);
+        }
+
+        /// <summary>Mesma ideia de ConsumirFome, pra Sede.</summary>
+        public void ConsumirSede(int quantidade)
+        {
+            if (quantidade <= 0) return;
+            Sede = Math.Max(0, Sede - quantidade);
+        }
+
+        /// <summary>Recupera Fome (comida), sem passar de FomeMaxima.</summary>
+        public void RestaurarFome(int quantidade)
+        {
+            if (quantidade <= 0) return;
+            Fome = Math.Min(FomeMaxima, Fome + quantidade);
+        }
+
+        /// <summary>Recupera Sede (água), sem passar de SedeMaxima.</summary>
+        public void RestaurarSede(int quantidade)
+        {
+            if (quantidade <= 0) return;
+            Sede = Math.Min(SedeMaxima, Sede + quantidade);
+        }
+
+        /// <summary>Dano que IGNORA a Defesa da armadura - usado pela inanição e
+        /// desidratação (Fome/Sede em 0). Uma armadura não protege de passar fome,
+        /// então esse caminho não passa pelo desconto de Defesa do ReceberDano.</summary>
+        public void ReceberDanoDireto(int quantidade)
+        {
+            if (quantidade <= 0) return;
+            Vida = Math.Max(0, Vida - quantidade);
+        }
+
+        /// <summary>Estado do personagem (termo pedido pela disciplina): vivo,
+        /// passando fome/sede, ou morto. Derivado, não guardado - assim nunca fica
+        /// dessincronizado dos valores reais.</summary>
+        public EstadoPersonagem Estado
+        {
+            get
+            {
+                if (Vida <= 0) return EstadoPersonagem.Morto;
+                if (Fome <= 0 || Sede <= 0) return EstadoPersonagem.Debilitado;
+                return EstadoPersonagem.Saudavel;
+            }
         }
     }
 }

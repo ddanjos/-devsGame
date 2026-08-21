@@ -146,19 +146,21 @@ namespace SurvivorGame.Cenarios
                 EntrarEm(local);
         }
 
-        /// <summary>Abre o cenário de um Local - o escritório jogável da ProWay, ou
-        /// a telinha de descrição padrão pros demais. Compartilhado entre o prompt
-        /// de proximidade (tecla E) e o clique do mouse.</summary>
+        /// <summary>Abre o cenário de um Local - o escritório da ProWay (agora no
+        /// formato ponto-e-clique do SCRUM-9, ver Mapa/LocalEscritorioProway), ou a
+        /// telinha de descrição padrão pros demais. Compartilhado entre o prompt de
+        /// proximidade (tecla E) e o clique do mouse.</summary>
         private void EntrarEm(LocalMapa local)
         {
-            // ProWay é o único Local que hoje tem interior jogável (o andar
-            // desenhado pelo Lindomar + o andar 0 encadeado via elevador) - os
-            // outros continuam só com a telinha de descrição de sempre.
-            if (local.Nome == "ProWay")
+            // A fábrica sabe montar o local jogável de cada ponto do mapa (ver
+            // Mapa/FabricaLocais) - assim esta tela não precisa conhecer o conteúdo
+            // do jogo inteiro. Se um ponto ainda não tiver conteúdo, ela devolve
+            // null e caímos na telinha de descrição de sempre.
+            ILocalExploravel? localJogavel = FabricaLocais.Criar(local.Nome);
+            if (localJogavel is not null)
             {
-                var escritorio = new MapaEscritorioProway();
-                var exploracao = new ExploracaoScreen(escritorio, _personagem, this);
-                Game.Instance.Screen = exploracao;
+                var tela = new LocalExploravelScreen(localJogavel, _personagem, this, Width, Height);
+                Game.Instance.Screen = tela;
                 Game.Instance.Screen.IsFocused = true;
                 return;
             }

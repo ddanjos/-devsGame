@@ -18,6 +18,12 @@ namespace SurvivorGame
 
         public static void Main(string[] args)
         {
+            // Partida nova: zera o progresso da missão (as 3 peças do rádio) e o
+            // estado guardado dos locais. Sem isso, rodar o jogo de novo na mesma
+            // execução herdaria as peças da partida anterior.
+            SurvivorGame.Regras.GerenciadorJogo.Reiniciar();
+            FabricaLocais.Reiniciar();
+
             _terreno = new MapaCidadeBlumenau();
             _itensNoChao = new MapaJogo();
             _inimigosNoMapa = new MapaInimigos();
@@ -59,13 +65,10 @@ namespace SurvivorGame
         {
             Point entrada = _terreno!.PontoEntrada;
 
-            var rato = new Inimigo("Rato Selvagem", vidaMaxima: 40, habilidades: new[]
-            {
-                new Habilidade("Mordida", dano: 8),
-                new Habilidade("Arranhão", dano: 5)
-            });
-
-            ScreenSurface arteRato = ArteUtils.CarregarArteInimigo("Artes/Inimigos/ratoselvagem.xp");
+            // Vem da FabricaInimigos pra os números do rato ficarem num lugar só
+            // (antes estavam duplicados aqui e dentro do andar 0).
+            Inimigo rato = FabricaInimigos.CriarRatoSelvagem();
+            ScreenSurface arteRato = FabricaInimigos.CarregarArteRato();
 
             _inimigosNoMapa!.AdicionarInimigo(new InimigoNoMapa(entrada.X + 3, entrada.Y + 2, 'r', Color.Red, rato, arteRato));
         }

@@ -45,12 +45,38 @@ namespace SurvivorGame.Combate
             AtaqueBasico = new Habilidade("Ataque", jogador.DanoBase);
         }
 
-        /// <summary>Chamem no início de cada turno do jogador (inclusive o primeiro): abre uma nova Rodada, ganha 1 de Energia e encerra o buff de Defender.</summary>
+        /// <summary>Aviso de inanição/desidratação gerado no início do turno, ou
+        /// string vazia. O CombateScreen mostra isso junto das outras mensagens.</summary>
+        public string AvisoDeEstado { get; private set; } = string.Empty;
+
+        /// <summary>Dano por rodada quando Fome ou Sede está em 0.</summary>
+        private const int DanoPorInanicao = 3;
+
+        /// <summary>Chamem no início de cada turno do jogador (inclusive o primeiro): abre uma nova Rodada, ganha 1 de Energia, gasta 1 de Fome e 1 de Sede (spec do Henrique) e encerra o buff de Defender. Com Fome ou Sede em 0, o personagem ainda perde vida por inanição/desidratação.</summary>
         public void IniciarTurnoJogador()
         {
             Rodada++;
             Energia++;
+            Jogador.ConsumirFome(1);
+            Jogador.ConsumirSede(1);
             Defendendo = false;
+
+            AvisoDeEstado = string.Empty;
+            if (Jogador.Fome <= 0 && Jogador.Sede <= 0)
+            {
+                Jogador.ReceberDanoDireto(DanoPorInanicao * 2);
+                AvisoDeEstado = $"Fome e sede no limite! Você perde {DanoPorInanicao * 2} de vida.";
+            }
+            else if (Jogador.Fome <= 0)
+            {
+                Jogador.ReceberDanoDireto(DanoPorInanicao);
+                AvisoDeEstado = $"Você está passando fome! Perde {DanoPorInanicao} de vida.";
+            }
+            else if (Jogador.Sede <= 0)
+            {
+                Jogador.ReceberDanoDireto(DanoPorInanicao);
+                AvisoDeEstado = $"Você está desidratado! Perde {DanoPorInanicao} de vida.";
+            }
         }
 
         /// <summary>Usa uma habilidade (ataque básico ou especial) contra o inimigo.</summary>
