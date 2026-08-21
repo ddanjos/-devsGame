@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using SadConsole;
 using SadConsole.Input;
 using SadRogue.Primitives;
@@ -10,6 +8,12 @@ using SurvivorGame.Regras;
 
 namespace SurvivorGame.UI
 {
+    /// <summary>
+    /// Tela de inventário: navega a mochila do jogador (setas + Enter), mostra o
+    /// que está equipado num painel à direita, e permite Usar/Equipar, Desequipar
+    /// ou Largar no Chão o item selecionado. Mesmo padrão das outras telas
+    /// (ScreenSurface + ProcessKeyboard) - ver CombateScreen/CenarioLocalScreen.
+    /// </summary>
     internal class InventarioScreen : ScreenSurface
     {
         private enum ModoInventario { SelecionandoItem, SubMenuAcoes }
@@ -42,54 +46,50 @@ namespace SurvivorGame.UI
 
         public override bool ProcessKeyboard(Keyboard keyboard)
         {
-            if (keyboard.IsKeyPressed(Keys.Escape) || keyboard.IsKeyPressed(Keys.I))
-            {
-                Game.Instance.Screen = _telaAnterior;
-                Game.Instance.Screen.IsFocused = true;
-                return true;
-            }
+            bool subiu = keyboard.IsKeyPressed(Keys.Up);
+            bool desceu = keyboard.IsKeyPressed(Keys.Down);
+            bool confirmou = keyboard.IsKeyPressed(Keys.Enter);
+            bool voltou = keyboard.IsKeyPressed(Keys.Escape) || keyboard.IsKeyPressed(Keys.I);
 
             var itens = _jogador.Inventario.Itens;
 
-            if (_modo == ModoInventario.SelecionandoItem)
+            switch (_modo)
             {
-                if (itens.Count == 0) return true;
+                case ModoInventario.SelecionandoItem:
+                    if (voltou)
+                    {
+                        Game.Instance.Screen = _telaAnterior;
+                        Game.Instance.Screen!.IsFocused = true;
+                        return true;
+                    }
 
-                if (keyboard.IsKeyPressed(Keys.Down))
-                {
-                    _indiceItem = (_indiceItem + 1) % itens.Count;
-                    Redesenhar();
-                }
-                else if (keyboard.IsKeyPressed(Keys.Up))
-                {
-                    _indiceItem = (_indiceItem - 1 + itens.Count) % itens.Count;
-                    Redesenhar();
-                }
-                else if (keyboard.IsKeyPressed(Keys.Enter))
-                {
-                    _modo = ModoInventario.SubMenuAcoes;
-                    _indiceAcao = 0;
-                    Redesenhar();
-                }
-            }
-            else if (_modo == ModoInventario.SubMenuAcoes)
-            {
-                if (keyboard.IsKeyPressed(Keys.Down))
-                {
-                    _indiceAcao = (_indiceAcao + 1) % _opcoesAcao.Length;
-                    Redesenhar();
-                }
-                else if (keyboard.IsKeyPressed(Keys.Up))
-                {
-                    _indiceAcao = (_indiceAcao - 1 + _opcoesAcao.Length) % _opcoesAcao.Length;
-                    Redesenhar();
-                }
-                else if (keyboard.IsKeyPressed(Keys.Enter))
-                {
-                    ExecutarAcaoMenu(itens[_indiceItem]);
-                }
+                    if (itens.Count == 0) break;
+
+                    if (desceu) _indiceItem = (_indiceItem + 1) % itens.Count;
+                    else if (subiu) _indiceItem = (_indiceItem - 1 + itens.Count) % itens.Count;
+                    else if (confirmou)
+                    {
+                        _modo = ModoInventario.SubMenuAcoes;
+                        _indiceAcao = 0;
+                    }
+                    break;
+
+                case ModoInventario.SubMenuAcoes:
+                    if (voltou)
+                    {
+                        _modo = ModoInventario.SelecionandoItem;
+                    }
+                    else if (desceu) _indiceAcao = (_indiceAcao + 1) % _opcoesAcao.Length;
+                    else if (subiu) _indiceAcao = (_indiceAcao - 1 + _opcoesAcao.Length) % _opcoesAcao.Length;
+                    else if (confirmou)
+                    {
+                        ExecutarAcaoMenu(itens[_indiceItem]);
+                        return true; // ExecutarAcaoMenu já redesenha
+                    }
+                    break;
             }
 
+            Redesenhar();
             return true;
         }
 
@@ -132,7 +132,7 @@ namespace SurvivorGame.UI
 
             _modo = ModoInventario.SelecionandoItem;
             if (_indiceItem >= _jogador.Inventario.Itens.Count)
-                _indiceItem = Math.Max(0, _jogador.Inventario.Itens.Count - 1);
+                _indiceItem = System.Math.Max(0, _jogador.Inventario.Itens.Count - 1);
 
             Redesenhar();
         }
@@ -140,54 +140,51 @@ namespace SurvivorGame.UI
         private void Redesenhar()
         {
             Surface.Clear();
+            Surface.Print(2, 1, "INVENTÁRIO", Color.Gold, Color.Black);
 
-            // Cabeçalho
-            Surface.Print(2, 1, "=== INVENTÁRIO DO SOBREVIVENTE ===", Color.Yellow, Color.Black);
-            Surface.Print(2, 2, $"HP: {_jogador.Vida}/{_jogador.VidaMaxima}", Color.LimeGreen, Color.Black);
-
-            // Coluna Esquerda: Itens da Mochila
-            Surface.Print(2, 4, "--- Mochila ---", Color.Cyan, Color.Black);
             var itens = _jogador.Inventario.Itens;
 
             if (itens.Count == 0)
             {
-                Surface.Print(2, 6, "(Mochila Vazia)", Color.Gray, Color.Black);
+                Surface.Print(2, 3, "(Mochila Vazia)", Color.Gray, Color.Black);
             }
             else
             {
                 for (int i = 0; i < itens.Count; i++)
                 {
-                    bool sel = i == _indiceItem;
-                    string prefixo = sel ? "> " : "  ";
-                    Color cor = sel ? Color.Yellow : Color.White;
-
-                    string equipadosStr = _jogador.Equipamentos.Contains(itens[i]) ? " [EQUIPADO]" : "";
-                    Surface.Print(2, 6 + i, $"{prefixo}{itens[i].Nome} x{itens[i].Quantidade}{equipadosStr}", cor, Color.Black);
+                    bool selecionado = i == _indiceItem && _modo == ModoInventario.SelecionandoItem;
+                    string prefixo = selecionado ? "> " : "  ";
+                    string tagEquipado = _jogador.Equipamentos.Contains(itens[i]) ? " [EQUIPADO]" : "";
+                    Color cor = selecionado ? Color.Yellow : Color.White;
+                    Surface.Print(2, 3 + i, $"{prefixo}{itens[i].Nome} x{itens[i].Quantidade}{tagEquipado}", cor, Color.Black);
                 }
             }
 
-            // Coluna Direita: Equipamentos Atuais
-            Surface.Print(40, 4, "--- Equipados ---", Color.Cyan, Color.Black);
-            Surface.Print(40, 6, $"Arma: {_jogador.ArmaEquipada?.Nome ?? "Nenhuma"}", Color.White, Color.Black);
-            Surface.Print(40, 7, $"Armadura: {_jogador.ArmaduraEquipada?.Nome ?? "Nenhuma"}", Color.White, Color.Black);
+            // Painel de equipamentos, à direita
+            int colunaDireita = Width / 2 + 4;
+            Surface.Print(colunaDireita, 1, "EQUIPADO", Color.Gold, Color.Black);
+            Surface.Print(colunaDireita, 3,
+                _jogador.ArmaEquipada is not null ? $"Arma: {_jogador.ArmaEquipada.Nome} (+{_jogador.ArmaEquipada.Dano} dano)" : "Arma: (nenhuma)",
+                Color.White, Color.Black);
+            Surface.Print(colunaDireita, 4,
+                _jogador.ArmaduraEquipada is not null ? $"Armadura: {_jogador.ArmaduraEquipada.Nome} (+{_jogador.ArmaduraEquipada.Defesa} defesa)" : "Armadura: (nenhuma)",
+                Color.White, Color.Black);
 
-            // Painel Inferior: Sub-Menu de Ações
+            // Submenu de ações do item selecionado
             if (_modo == ModoInventario.SubMenuAcoes && itens.Count > 0)
             {
-                int yMenu = Height - 6;
-                Surface.Print(2, yMenu - 1, $"Opções para '{itens[_indiceItem].Nome}':", Color.Orange, Color.Black);
-
+                int yMenu = Height - 7;
+                Surface.Print(2, yMenu - 1, $"-- {itens[_indiceItem].Nome} --", Color.Cyan, Color.Black);
                 for (int i = 0; i < _opcoesAcao.Length; i++)
                 {
-                    bool sel = i == _indiceAcao;
-                    string prefixo = sel ? "> " : "  ";
-                    Color cor = sel ? Color.Yellow : Color.Gray;
-
-                    Surface.Print(2, yMenu + i, $"{prefixo}{_opcoesAcao[i]}", cor, Color.Black);
+                    bool selecionado = i == _indiceAcao;
+                    string prefixo = selecionado ? "> " : "  ";
+                    Color cor = selecionado ? Color.Yellow : Color.White;
+                    Surface.Print(2, yMenu + i, prefixo + _opcoesAcao[i], cor, Color.Black);
                 }
             }
 
-            Surface.Print(2, Height - 1, "ESC ou 'I' para fechar | Enter para selecionar", Color.DarkGray, Color.Black);
+            Surface.Print(2, Height - 1, "Setas: navega | Enter: confirma | ESC/I: fecha", Color.Gray, Color.Black);
         }
     }
 }

@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Artes\**\*.xp" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Se o "dotnet restore" não achar essas versões exatas, atualizem para as mais
          recentes listadas em https://www.nuget.org/packages/SadConsole -->
     <PackageReference Include="SadConsole" Version="10.10.1" />
@@ -22,7 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Artes\Inimigos\ratoselvagem.xp">
+    <!-- Wildcard em vez de listar arquivo por arquivo: qualquer .xp dentro de Artes/
+         (em qualquer subpasta) é copiado pro diretório de saída automaticamente. -->
+    <Content Include="Artes\**\*.xp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

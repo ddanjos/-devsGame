@@ -9,11 +9,9 @@ using SurvivorGame.UI;
 namespace SurvivorGame.Cenarios
 {
     /// <summary>
-    /// Tela principal do overworld (a cidade). Antes essa lógica vivia solta em
-    /// Program.cs como uma ScreenSurface "crua"; virou uma classe própria (mesmo
-    /// padrão de CombateScreen/CenarioLocalScreen) porque precisávamos de
-    /// ProcessKeyboard pra abrir o inventário com a tecla 'I' - uma ScreenSurface
-    /// sem subclasse não tem como reagir a uma tecla específica.
+    /// Tela principal do overworld (a cidade). Precisa ser uma classe própria (mesmo
+    /// padrão de CombateScreen/CenarioLocalScreen) porque ProcessKeyboard exige
+    /// subclasse de ScreenSurface - é assim que abrimos o inventário com 'I'.
     /// </summary>
     internal class MapaScreen : ScreenSurface
     {
@@ -21,14 +19,18 @@ namespace SurvivorGame.Cenarios
         private readonly MapaJogo _itensNoChao;
         private readonly MapaInimigos _inimigosNoMapa;
         private readonly Personagem _personagem;
+        private readonly System.Action _aoReiniciar;
+        private readonly System.Action _aoSair;
 
-        public MapaScreen(IMapa terreno, MapaJogo itensNoChao, MapaInimigos inimigosNoMapa, Personagem personagem)
+        public MapaScreen(IMapa terreno, MapaJogo itensNoChao, MapaInimigos inimigosNoMapa, Personagem personagem, System.Action aoReiniciar, System.Action aoSair)
             : base(terreno.Largura, terreno.Altura)
         {
             _terreno = terreno;
             _itensNoChao = itensNoChao;
             _inimigosNoMapa = inimigosNoMapa;
             _personagem = personagem;
+            _aoReiniciar = aoReiniciar;
+            _aoSair = aoSair;
 
             UseMouse = true;
             UseKeyboard = true;
@@ -63,7 +65,9 @@ namespace SurvivorGame.Cenarios
                     this,
                     Width,
                     Height,
-                    RedesenharMapaCompleto
+                    RedesenharMapaCompleto,
+                    _aoReiniciar,
+                    _aoSair
                 );
 
                 Game.Instance.Screen = combate;
