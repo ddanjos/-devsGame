@@ -50,18 +50,31 @@ namespace SurvivorGame.Cenarios
             _telaAnterior = telaAnterior;
 
             UseKeyboard = true;
-            IsFocused = true;
 
+            // ORDEM IMPORTA: TrocarLocal precisa vir ANTES de IsFocused.
+            // Atribuir IsFocused dispara OnFocused(), que redesenha a tela lendo
+            // _local - e se _local ainda estiver null, o construtor lança
+            // NullReferenceException e o jogo fecha sozinho ao entrar num local.
+            // Foi exatamente o que aconteceu quando o OnFocused foi adicionado.
             TrocarLocal(local);
+
+            IsFocused = true;
         }
 
         /// <summary>Redesenha ao reganhar o foco - é o que acontece ao voltar do
         /// combate ou do inventário. Sem isso a tela ficava com os dados de ANTES
         /// (ex: sair de uma luta com 18 de vida e a tela ainda mostrando 90), e o
-        /// jogador escolhia a próxima ação com base em números falsos.</summary>
+        /// jogador escolhia a próxima ação com base em números falsos.
+        ///
+        /// A guarda de null é proposital: este método é virtual e o SadConsole pode
+        /// chamá-lo durante a construção do objeto, quando os campos ainda não
+        /// foram preenchidos. Sem ela, a ordem do construtor vira uma armadilha
+        /// pra quem mexer aqui depois.</summary>
         public override void OnFocused()
         {
             base.OnFocused();
+
+            if (_local is null) return;
             Redesenhar();
         }
 
