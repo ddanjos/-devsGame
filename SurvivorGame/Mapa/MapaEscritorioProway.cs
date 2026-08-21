@@ -1,127 +1,92 @@
 using SadConsole;
 using SadRogue.Primitives;
+using SurvivorGame.Utilitarios;
 
 namespace SurvivorGame.Mapa
 {
     /// <summary>
     /// Andar da ProWay onde o personagem começa - interior do prédio antes de
-    /// pegar o elevador. Baseado no desenho do Lindomar em REXPaint
-    /// (Artes/Cenarios/mapa_inicio_teste.xp, mostrado como tela de entrada pelo
-    /// ExploracaoScreen antes de liberar o movimento).
+    /// pegar o elevador. A arte É o mapa: carregamos o .xp que o Lindomar
+    /// desenhou no REXPaint (Artes/Cenarios/mapa_inicio_teste.xp) e desenhamos
+    /// ele célula por célula como o próprio terreno, em vez de redesenhar um
+    /// mapa abstrato ao lado da arte dele. O jogador anda literalmente em cima
+    /// do desenho original, 60x60, pixel a pixel.
     ///
-    /// O layout de colisão abaixo é uma APROXIMAÇÃO da topologia desenhada por ele
-    /// (5 salas + corredor central com o elevador no meio) feita à mão como grade
-    /// de texto - eu não consegui extrair as paredes exatas do .xp porque o
-    /// desenho usa só blocos de cor de fundo (sem glyphs de texto), então não dá
-    /// pra distinguir "parede" de "decoração" só pela cor com segurança. Ajustem
-    /// os caracteres abaixo pra bater melhor com o desenho original se precisar.
-    ///
-    /// Legenda: '#' parede, '.' chão, 'E' entrada (porta da rua),
-    /// 'L' elevador (leva pro andar 0 - ver MapaDestino).
+    /// Sobre colisão: o arquivo .xp não marca "isso é parede" em lugar nenhum -
+    /// ele é desenhado só com blocos de cor de fundo preenchendo a tela inteira
+    /// (nenhuma célula fica "vazia"/fora da estrutura), então não existe um sinal
+    /// confiável pra distinguir parede de piso só pela cor. Por isso o andar
+    /// inteiro é caminhável (EhBloqueado só barra fora dos limites do mapa) - o
+    /// que faz sentido pra um escritório de piso aberto. O elevador e a escada
+    /// pro porão são pontos exatos de ativação, posicionados nas coordenadas
+    /// reais de onde o Lindomar desenhou os indicadores (o marcador
+    /// vermelho/azul no meio do corredor, no caso do elevador).
     /// </summary>
     internal class MapaEscritorioProway : IMapa
     {
-        private static readonly string[] Layout =
-        {
-            "##################################################",
-            "##..................##......###.................##",
-            "##..................##......###.................##",
-            "##..........................###.................##",
-            "##..................##..........................##",
-            "##..................##......###.................##",
-            "##..................##......###.................##",
-            "######################......###.................##",
-            "##...............#####......###.................##",
-            "##...............#####......######################",
-            "##..........................######################",
-            "##...............#####......######################",
-            "##...............#####..L...######################",
-            "##...............#####......######################",
-            "######################......######################",
-            "##..................##......###.................##",
-            "##..................##......###.................##",
-            "##..................##......###.................##",
-            "##..............................................##",
-            "##..................##......###.................##",
-            "##..................##......###.................##",
-            "##..................##......###.................##",
-            "##..................##......###.................##",
-            "##..................##......###.................##",
-            "######################..E...######################",
-            "##################################################",
-        };
+        private const string CaminhoXp = "Artes/Cenarios/mapa_inicio_teste.xp";
+
+        // Coordenadas reais dentro do .xp (60x60), lidas diretamente dos pixels
+        // do arquivo - não são um palpite. O marcador azul (51,51,255) que o
+        // Lindomar desenhou no meio do corredor central fica nas células
+        // (30,18)-(30,27); usamos uma delas como o "botão" do elevador. A
+        // entrada é o ponto onde o corredor escuro alcança a borda de baixo do
+        // desenho (a "porta da rua").
+        private static readonly Point PosicaoElevador = new(30, 22);
+        private static readonly Point PosicaoEntrada = new(25, 58);
+
+        // A escada pro porão não vem do desenho do Lindomar (ele não desenhou
+        // um porão) - é só um ponto dentro de uma das salas, reaproveitando o
+        // MapaMasmorra que já existia pronto no projeto sem uso nenhum.
+        private static readonly Point PosicaoEscada = new(10, 10);
+
+        private readonly ScreenSurface _arte;
+        private readonly IMapa _andarZero;
+        private readonly IMapa _porao;
 
         public int Largura { get; }
         public int Altura { get; }
-        public Point PontoEntrada { get; private set; }
-
-        private readonly Tile[,] _tiles;
-        private readonly IMapa _andarZero;
+        public Point PontoEntrada => PosicaoEntrada;
 
         public MapaEscritorioProway()
         {
+            _arte = ArteUtils.CarregarArteCenario(CaminhoXp);
+            Largura = _arte.Width;
+            Altura = _arte.Height;
+
             _andarZero = new MapaAndarZero();
-
-            Altura = Layout.Length;
-            Largura = Layout[0].Length;
-            _tiles = new Tile[Largura, Altura];
-            Construir();
+            _porao = new MapaMasmorra();
         }
 
-        private void Construir()
+        public Tile ObterTile(int x, int y)
         {
-            for (int y = 0; y < Altura; y++)
-            {
-                string linha = Layout[y];
-                for (int x = 0; x < Largura; x++)
-                {
-                    char c = linha[x];
-
-                    if (c == 'E')
-                    {
-                        PontoEntrada = new Point(x, y);
-                        _tiles[x, y] = TileFactory.Criar(TileType.Chao);
-                        continue;
-                    }
-
-                    TileType tipo = c switch
-                    {
-                        '#' => TileType.Parede,
-                        'L' => TileType.Elevador,
-                        _ => TileType.Chao
-                    };
-
-                    _tiles[x, y] = TileFactory.Criar(tipo);
-                }
-            }
+            if (new Point(x, y) == PosicaoElevador) return TileFactory.Criar(TileType.Elevador);
+            if (new Point(x, y) == PosicaoEscada) return TileFactory.Criar(TileType.Escada);
+            return TileFactory.Criar(TileType.Chao);
         }
-
-        public Tile ObterTile(int x, int y) => _tiles[x, y];
 
         public bool EhBloqueado(int x, int y)
-        {
-            if (x < 0 || x >= Largura || y < 0 || y >= Altura)
-                return true;
+            => x < 0 || x >= Largura || y < 0 || y >= Altura;
 
-            return _tiles[x, y].Bloqueado;
-        }
-
+        /// <summary>Copia a arte do Lindomar direto pra tela, célula por célula -
+        /// é o mapa em si, não uma ilustração ao lado dele.</summary>
         public void DesenharEm(ScreenSurface superficie)
+            => _arte.Surface.Copy(superficie.Surface, 0, 0);
+
+        /// <summary>Pisou no elevador? Manda pro andar 0. Pisou na escada? Manda
+        /// pro porão (MapaMasmorra). ESC a qualquer momento volta direto pro
+        /// mapa da cidade (ver ExploracaoScreen).</summary>
+        public IMapa? MapaDestino(int x, int y)
         {
-            for (int y = 0; y < Altura; y++)
-            {
-                for (int x = 0; x < Largura; x++)
-                {
-                    Tile tile = _tiles[x, y];
-                    superficie.Surface.SetGlyph(x, y, tile.Glyph, tile.CorFrente, tile.CorFundo);
-                }
-            }
+            if (new Point(x, y) == PosicaoElevador) return _andarZero;
+            if (new Point(x, y) == PosicaoEscada) return _porao;
+            return null;
         }
 
-        /// <summary>Pisou no elevador ('L')? Manda pro andar 0.</summary>
-        public IMapa? MapaDestino(int x, int y)
-            => ObterTile(x, y).Tipo == TileType.Elevador ? _andarZero : null;
-
-        public string? CaminhoArte => "Artes/Cenarios/mapa_inicio_teste.xp";
+        /// <summary>Dica mostrada assim que o jogador entra aqui - o jogo precisa
+        /// se ensinar sozinho, então em vez de deixar o jogador procurando o
+        /// elevador sem pista nenhuma, apontamos o objetivo direto.</summary>
+        public string? Dica =>
+            "Você está no escritório da ProWay. Ande até o indicador azul no meio do corredor para chamar o elevador.";
     }
 }

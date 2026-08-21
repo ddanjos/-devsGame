@@ -25,8 +25,16 @@ namespace SurvivorGame
             Point entrada = _terreno.PontoEntrada;
             _personagem = new Personagem("Sobrevivente", entrada.X, entrada.Y);
 
+            // A janela precisa caber o maior cenário do jogo, não só a cidade: os
+            // mapas de interior desenhados pelo Lindomar em REXPaint são 60x60
+            // (Artes/Cenarios/*.xp), mais altos que os 45 da cidade. Sem isso, o
+            // andar 0 (que tem a saída lá embaixo, perto da linha 59) ficaria
+            // cortado fora da janela.
+            int larguraJanela = Math.Max(_terreno.Largura, 60);
+            int alturaJanela = Math.Max(_terreno.Altura, 60);
+
             Builder startup = new Builder()
-                .SetScreenSize(_terreno.Largura, _terreno.Altura)
+                .SetScreenSize(larguraJanela, alturaJanela)
                 .OnStart(Game_Started);
 
             Game.Create(startup);

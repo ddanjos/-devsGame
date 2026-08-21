@@ -37,15 +37,24 @@ namespace SurvivorGame.Cenarios
         private bool _explorando;
         private string _mensagem = string.Empty;
 
+        /// <summary>
+        /// O tamanho da tela é o tamanho do PRÓPRIO mapa (mapa.Largura/Altura) -
+        /// pros mapas de interior baseados em REXPaint isso é literalmente 60x60,
+        /// o mesmo tamanho do arquivo .xp do Lindomar, então o que o jogador vê
+        /// enquanto anda é a arte original dele, célula por célula, não uma cópia
+        /// redesenhada. A janela do jogo já é grande o suficiente pra isso (ver
+        /// Program.cs).
+        /// </summary>
         public ExploracaoScreen(IMapa mapa, Personagem jogador, IScreenObject telaAnterior,
-            int larguraJanela, int alturaJanela, MapaJogo? itensNoChao = null)
-            : base(larguraJanela, alturaJanela)
+            MapaJogo? itensNoChao = null)
+            : base(mapa.Largura, mapa.Altura)
         {
             _mapa = mapa;
             _jogador = jogador;
             _telaAnterior = telaAnterior;
             _itensNoChao = itensNoChao ?? new MapaJogo();
             _posicao = mapa.PontoEntrada;
+            _mensagem = mapa.Dica ?? string.Empty;
 
             _arteIntroducao = mapa.CaminhoArte is not null
                 ? ArteUtils.CarregarArteCenario(mapa.CaminhoArte)
@@ -134,7 +143,7 @@ namespace SurvivorGame.Cenarios
             IMapa? proximoMapa = _mapa.MapaDestino(novoX, novoY);
             if (proximoMapa is not null)
             {
-                var proximaTela = new ExploracaoScreen(proximoMapa, _jogador, _telaAnterior, Width, Height, _itensNoChao);
+                var proximaTela = new ExploracaoScreen(proximoMapa, _jogador, _telaAnterior, _itensNoChao);
                 Game.Instance.Screen = proximaTela;
                 Game.Instance.Screen.IsFocused = true;
                 return;
@@ -165,9 +174,43 @@ namespace SurvivorGame.Cenarios
             _mapa.DesenharEm(this);
             Surface.SetGlyph(_posicao.X, _posicao.Y, '@', Color.LimeGreen, Color.Black);
 
-            Surface.Print(2, Height - 2, "Setas/WASD para mover | ESC para voltar", Color.Gray, Color.Black);
+            Surface.Print(2, Height - 1, "Setas/WASD para mover | ESC para voltar", Color.Gray, Color.Black);
+
+            // A dica inicial (mapa.Dica) pode ser mais longa que uma linha cabe -
+            // quebra em várias linhas, iguais o QuebrarLinhas do CenarioLocalScreen,
+            // impressas de baixo pra cima logo acima do rodapé de controles.
             if (!string.IsNullOrEmpty(_mensagem))
-                Surface.Print(2, Height - 1, _mensagem, Color.Yellow, Color.Black);
+            {
+                List<string> linhas = QuebrarLinhas(_mensagem, Width - 4).ToList();
+                int linhaInicial = Height - 1 - linhas.Count;
+                for (int i = 0; i < linhas.Count; i++)
+                    Surface.Print(2, linhaInicial + i, linhas[i], Color.Yellow, Color.Black);
+            }
+        }
+
+        /// <summary>Quebra um texto em linhas de até larguraMaxima caracteres, sem
+        /// cortar palavras no meio (mesma ideia do CenarioLocalScreen).</summary>
+        private static IEnumerable<string> QuebrarLinhas(string texto, int larguraMaxima)
+        {
+            string[] palavras = texto.Split(' ');
+            var linhaAtual = new System.Text.StringBuilder();
+
+            foreach (string palavra in palavras)
+            {
+                if (linhaAtual.Length + palavra.Length + 1 > larguraMaxima)
+                {
+                    yield return linhaAtual.ToString();
+                    linhaAtual.Clear();
+                }
+
+                if (linhaAtual.Length > 0)
+                    linhaAtual.Append(' ');
+
+                linhaAtual.Append(palavra);
+            }
+
+            if (linhaAtual.Length > 0)
+                yield return linhaAtual.ToString();
         }
     }
 }

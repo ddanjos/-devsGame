@@ -82,7 +82,7 @@ namespace SurvivorGame.Cenarios
                 if (local.Nome == "ProWay")
                 {
                     var escritorio = new MapaEscritorioProway();
-                    var exploracao = new ExploracaoScreen(escritorio, _personagem, this, Width, Height);
+                    var exploracao = new ExploracaoScreen(escritorio, _personagem, this);
                     Game.Instance.Screen = exploracao;
                     Game.Instance.Screen.IsFocused = true;
                     return;

@@ -7,6 +7,7 @@ using SadRogue.Primitives;
 using SurvivorGame.Inventario;
 using SurvivorGame.Mapa;
 using SurvivorGame.Regras;
+using SurvivorGame.Utilitarios;
 
 namespace SurvivorGame.UI
 {
@@ -170,6 +171,18 @@ namespace SurvivorGame.UI
             Surface.Print(40, 4, "--- Equipados ---", Color.Cyan, Color.Black);
             Surface.Print(40, 6, $"Arma: {_jogador.ArmaEquipada?.Nome ?? "Nenhuma"}", Color.White, Color.Black);
             Surface.Print(40, 7, $"Armadura: {_jogador.ArmaduraEquipada?.Nome ?? "Nenhuma"}", Color.White, Color.Black);
+
+            // Ícone do item selecionado (canto direito) - vem dos .xp que o colega
+            // desenhou (Artes/Icones/), carregado via IconeUtils (Flyweight, igual
+            // ao TileFactory).
+            if (itens.Count > 0)
+            {
+                ScreenSurface icone = IconeUtils.ObterIcone(itens[_indiceItem]);
+                int iconeX = Width - icone.Width - 3;
+                int iconeY = 4;
+                Surface.Print(iconeX, iconeY - 1, "Ícone:", Color.Cyan, Color.Black);
+                icone.Surface.Copy(Surface, iconeX, iconeY);
+            }
 
             // Painel Inferior: Sub-Menu de Ações
             if (_modo == ModoInventario.SubMenuAcoes && itens.Count > 0)

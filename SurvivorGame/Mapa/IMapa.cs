@@ -45,5 +45,13 @@ namespace SurvivorGame.Mapa
         /// de MapaDestino acima.
         /// </summary>
         string? CaminhoArte => null;
+
+        /// <summary>
+        /// Dica curta mostrada assim que o jogador entra neste mapa, pra ele
+        /// aprender jogando sem precisar de manual - ex: "ande até o indicador
+        /// azul pra chamar o elevador". null = sem dica (mapas onde o objetivo já
+        /// é óbvio, como a cidade). Ver ExploracaoScreen.Redesenhar.
+        /// </summary>
+        string? Dica => null;
     }
 }

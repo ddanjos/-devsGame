@@ -23,6 +23,8 @@
         // MapaAndarZero. Nao bloqueiam passagem: sao "gatilhos" de transicao entre
         // telas, verificados pelo ExploracaoScreen depois de cada movimento.
         Elevador,    // andar da Proway -> andar 0 (ver IMapa.MapaDestino)
-        SaidaPredio  // andar 0 -> volta pro mapa da cidade (MapaCidadeBlumenau)
+        SaidaPredio, // andar 0 -> volta pro mapa da cidade (MapaCidadeBlumenau)
+        Escada       // andar da Proway -> porao (reaproveita MapaMasmorra, que
+                      // existia pronta no codigo mas nunca era usada em lugar nenhum)
     }
 }
