@@ -20,6 +20,8 @@ namespace SurvivorGame.Combate
         private readonly InimigoNoMapa? _inimigoNoMapa;
         private readonly MapaInimigos? _mapaInimigos;
         private readonly Action? _aoSairDoCombate;
+        private readonly Action? _aoReiniciar;
+        private readonly Action? _aoSair;
 
         private Fase _fase = Fase.MenuPrincipal;
         private int _indiceSelecionado;
@@ -34,19 +36,21 @@ namespace SurvivorGame.Combate
         private string _mensagemRecompensa = string.Empty;
 
         // Sobrecarga Principal: Recebe InimigoNoMapa e MapaInimigos para poder removê-lo
-        public CombateScreen(Personagem jogador, InimigoNoMapa inimigoNoMapa, MapaInimigos mapaInimigos, IScreenObject telaAnterior, int largura, int altura, Action? aoSairDoCombate = null)
-            : this(jogador, inimigoNoMapa.DadosCombate, telaAnterior, largura, altura, inimigoNoMapa.ArteXP)
+        public CombateScreen(Personagem jogador, InimigoNoMapa inimigoNoMapa, MapaInimigos mapaInimigos, IScreenObject telaAnterior, int largura, int altura, Action? aoSairDoCombate = null, Action? aoReiniciar = null, Action? aoSair = null)
+            : this(jogador, inimigoNoMapa.DadosCombate, telaAnterior, largura, altura, inimigoNoMapa.ArteXP, aoReiniciar, aoSair)
         {
             _inimigoNoMapa = inimigoNoMapa;
             _mapaInimigos = mapaInimigos;
             _aoSairDoCombate = aoSairDoCombate;
         }
 
-        public CombateScreen(Personagem jogador, Inimigo inimigo, IScreenObject telaAnterior, int largura, int altura, ScreenSurface? arteXP = null)
+        public CombateScreen(Personagem jogador, Inimigo inimigo, IScreenObject telaAnterior, int largura, int altura, ScreenSurface? arteXP = null, Action? aoReiniciar = null, Action? aoSair = null)
             : base(largura, altura)
         {
             _telaAnterior = telaAnterior;
             _arteXP = arteXP;
+            _aoReiniciar = aoReiniciar;
+            _aoSair = aoSair;
             _sessao = new SessaoCombate(jogador, inimigo);
 
             UseKeyboard = true;
@@ -93,10 +97,23 @@ namespace SurvivorGame.Combate
                 case Fase.FimDeCombate:
                     if (qualquerTecla)
                     {
-                        // Redesenha a tela do overworld para limpar o sprite do inimigo
-                        _aoSairDoCombate?.Invoke();
-                        Game.Instance.Screen = _telaAnterior;
-                        Game.Instance.Screen!.IsFocused = true;
+                        if (_resultadoFinal == ResultadoCombate.Derrota && _aoReiniciar is not null && _aoSair is not null)
+                        {
+                            Game.Instance.Screen = new SurvivorGame.Cenarios.GameOverScreen(_aoReiniciar, _aoSair, Width, Height);
+                            Game.Instance.Screen.IsFocused = true;
+                        }
+                        else if (_resultadoFinal == ResultadoCombate.Vitoria && GerenciadorJogo.PodeTransmitir && _aoSair is not null)
+                        {
+                            Game.Instance.Screen = new SurvivorGame.Cenarios.VitoriaScreen(_aoSair, Width, Height);
+                            Game.Instance.Screen.IsFocused = true;
+                        }
+                        else
+                        {
+                            // Redesenha a tela do overworld para limpar o sprite do inimigo
+                            _aoSairDoCombate?.Invoke();
+                            Game.Instance.Screen = _telaAnterior;
+                            Game.Instance.Screen!.IsFocused = true;
+                        }
                     }
                     break;
             }
