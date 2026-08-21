@@ -53,6 +53,22 @@ namespace SurvivorGame.Combate
             IsFocused = true;
 
             _sessao.IniciarTurnoJogador();
+
+            // O primeiro turno já consome Fome/Sede e pode matar por inanição.
+            // Sem esta checagem o combate começava com o jogador em 0 de vida e
+            // seguia normalmente, e o aviso de inanição era descartado em silêncio.
+            if (!string.IsNullOrEmpty(_sessao.AvisoDeEstado))
+            {
+                MostrarMensagens(new[] { _sessao.AvisoDeEstado }, () =>
+                {
+                    if (_sessao.VerificarResultado() != ResultadoCombate.EmAndamento)
+                        Finalizar(_sessao.VerificarResultado());
+                    else
+                        VoltarParaMenuPrincipal();
+                });
+                return;
+            }
+
             Redesenhar();
         }
 
@@ -170,7 +186,13 @@ namespace SurvivorGame.Combate
 
                 case 4:
                     string mensagemFuga = _sessao.Fugir();
-                    MostrarMensagens(new[] { mensagemFuga }, () => Finalizar(ResultadoCombate.Fugiu));
+                    // Fugir não pode ressuscitar: se a vida já chegou a 0 (inanição),
+                    // o resultado é derrota. Antes dava pra fugir com 0 de vida e
+                    // continuar jogando morto pelo mapa da cidade.
+                    MostrarMensagens(new[] { mensagemFuga }, () =>
+                        Finalizar(_sessao.VerificarResultado() == ResultadoCombate.Derrota
+                            ? ResultadoCombate.Derrota
+                            : ResultadoCombate.Fugiu));
                     break;
             }
         }
@@ -180,6 +202,19 @@ namespace SurvivorGame.Combate
             if (_habilidadesDisponiveis.Count == 0) return;
 
             Habilidade escolhida = _habilidadesDisponiveis[_indiceSelecionado];
+
+            // Sem energia suficiente a habilidade não sai - e antes o jogador ainda
+            // PERDIA o turno (o inimigo contra-atacava mesmo assim), porque o menu
+            // deixava escolher e o resultado "energia insuficiente" seguia o mesmo
+            // caminho de um ataque válido. Agora avisa e devolve pro menu.
+            if (escolhida.CustoEnergia > _sessao.Energia)
+            {
+                MostrarMensagens(
+                    new[] { $"Energia insuficiente para {escolhida.Nome}: precisa de {escolhida.CustoEnergia}, você tem {_sessao.Energia}." },
+                    () => { _fase = Fase.MenuAtaques; Redesenhar(); });
+                return;
+            }
+
             ExecutarAcaoDoJogador(() => _sessao.Atacar(escolhida));
         }
 

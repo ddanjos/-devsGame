@@ -64,18 +64,25 @@ namespace SurvivorGame.Mapa
             if (_vezesQueTocouOSino == 2)
                 return new ResultadoAcao { Mensagem = "Dois sinos respondem dessa vez, quase juntos. Parece que falta um." };
 
-            _segredoJaRevelado = true;
-
             var cantil = new Consumivel("Cantil do Padre",
-                "Um cantil de metal, cheio até a boca. Alguém guardou com carinho.", 1, 'u', cura: 30);
+                "Um cantil de metal, cheio até a boca. Alguém guardou com carinho.", 1, 'u',
+                cura: 30, restauraSede: 40);
             bool coletou = jogador.Inventario.AdicionarItem(cantil);
-            jogador.RestaurarSede(20);
+
+            // Só marca o segredo como revelado se o jogador REALMENTE levou o
+            // cantil: antes, com a mochila cheia, o item sumia do jogo pra sempre
+            // e ainda assim o jogador ganhava a sede restaurada.
+            if (!coletou)
+                return new ResultadoAcao
+                {
+                    Mensagem = "Os três sinos tocam juntos! Atrás do altar tem um cantil escondido - mas sua mochila está cheia. Volte com espaço."
+                };
+
+            _segredoJaRevelado = true;
 
             return new ResultadoAcao
             {
-                Mensagem = coletou
-                    ? "Os três sinos tocam juntos uma melodia inteira. Atrás do altar, um painel solto revela um esconderijo: o Cantil do Padre, cheio de água limpa!"
-                    : "Os três sinos tocam juntos! Atrás do altar tem um cantil escondido - mas sua mochila está cheia demais pra levá-lo."
+                Mensagem = "Os três sinos tocam juntos uma melodia inteira. Atrás do altar, um painel solto revela um esconderijo: o Cantil do Padre, cheio de água limpa!"
             };
         }
     }

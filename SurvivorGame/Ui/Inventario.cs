@@ -101,7 +101,13 @@ namespace SurvivorGame.UI
                 case 0: // Usar / Equipar
                     if (item is Consumivel consumivel)
                     {
+                        // Um consumível pode restaurar Vida, Fome e/ou Sede - antes
+                        // só existia Cura (Vida), então uma garrafa d'água matava
+                        // ferimento e não matava sede, contrariando a própria
+                        // descrição do item.
                         _jogador.Curar(consumivel.Cura);
+                        _jogador.RestaurarFome(consumivel.RestauraFome);
+                        _jogador.RestaurarSede(consumivel.RestauraSede);
                         _jogador.Inventario.RemoverItem(item, 1);
                     }
                     else if (item is Arma or Armadura)
@@ -118,13 +124,19 @@ namespace SurvivorGame.UI
                     break;
 
                 case 2: // Largar no Chão
-                    // Se o item largado estava equipado, desequipa primeiro.
-                    _jogador.Desequipar(item);
+                    // Só desequipa se for a ÚLTIMA unidade da pilha: largar 1 de
+                    // "Faca x3" não pode deixar o jogador desarmado com 2 facas
+                    // ainda na mochila.
+                    if (item.Quantidade <= 1)
+                        _jogador.Desequipar(item);
 
                     if (_mapaJogo is not null)
+                    {
                         AcoesJogador.DroparItem(_jogador, _mapaJogo, item.Nome, 1);
-                    else
-                        _jogador.Inventario.RemoverItem(item, 1);
+                    }
+                    // Sem mapa (inventário aberto de dentro de um local), NÃO
+                    // removemos: antes o item era simplesmente apagado do jogo, o
+                    // que fazia "Largar no Chão" destruir o item em vez de largá-lo.
                     break;
 
                 case 3: // Voltar

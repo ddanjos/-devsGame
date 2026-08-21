@@ -55,6 +55,16 @@ namespace SurvivorGame.Cenarios
             TrocarLocal(local);
         }
 
+        /// <summary>Redesenha ao reganhar o foco - é o que acontece ao voltar do
+        /// combate ou do inventário. Sem isso a tela ficava com os dados de ANTES
+        /// (ex: sair de uma luta com 18 de vida e a tela ainda mostrando 90), e o
+        /// jogador escolhia a próxima ação com base em números falsos.</summary>
+        public override void OnFocused()
+        {
+            base.OnFocused();
+            Redesenhar();
+        }
+
         public override bool ProcessKeyboard(Keyboard keyboard)
         {
             if (keyboard.IsKeyPressed(Keys.I))
@@ -228,8 +238,18 @@ namespace SurvivorGame.Cenarios
                 Surface.Print(2, Height - 7 + i, prefixo + acoes[i].Texto + custo, cor, Color.Black);
             }
 
+            // A mensagem PRECISA ser quebrada em linhas: o Print do SadConsole
+            // escreve num buffer plano, então um texto maior que a largura da tela
+            // transborda pra linha de baixo e suja o rodapé de controles. Textos
+            // longos (o diário do Museu da Família Colonial tem 228 caracteres)
+            // faziam exatamente isso. Imprime de baixo pra cima, acima do rodapé.
             if (!string.IsNullOrEmpty(_mensagem))
-                Surface.Print(2, Height - 2, _mensagem, Color.Cyan, Color.Black);
+            {
+                List<string> linhas = QuebrarLinhas(_mensagem, Width - 4).ToList();
+                int linhaInicial = Height - 1 - linhas.Count;
+                for (int i = 0; i < linhas.Count; i++)
+                    Surface.Print(2, linhaInicial + i, linhas[i], Color.Cyan, Color.Black);
+            }
 
             Surface.Print(2, Height - 1, "Setas + Enter para escolher | I para inventário | ESC para voltar", Color.Gray, Color.Black);
         }

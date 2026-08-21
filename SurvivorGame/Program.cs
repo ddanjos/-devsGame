@@ -53,24 +53,19 @@ namespace SurvivorGame
             if (_terreno is null || _personagem is null || _itensNoChao is null || _inimigosNoMapa is null)
                 return;
 
-            CriarInimigosDoMapa();
-
             var mapaScreen = new MapaScreen(_terreno, _itensNoChao, _inimigosNoMapa, _personagem);
 
             Game.Instance.Screen = mapaScreen;
             Game.Instance.Screen.IsFocused = true;
         }
 
-        private static void CriarInimigosDoMapa()
-        {
-            Point entrada = _terreno!.PontoEntrada;
-
-            // Vem da FabricaInimigos pra os números do rato ficarem num lugar só
-            // (antes estavam duplicados aqui e dentro do andar 0).
-            Inimigo rato = FabricaInimigos.CriarRatoSelvagem();
-            ScreenSurface arteRato = FabricaInimigos.CarregarArteRato();
-
-            _inimigosNoMapa!.AdicionarInimigo(new InimigoNoMapa(entrada.X + 3, entrada.Y + 2, 'r', Color.Red, rato, arteRato));
-        }
+        // REMOVIDO: antes plantávamos um "Rato Selvagem" decorativo a três células
+        // do ponto de partida, herdado de quando o mapa da cidade era o único lugar
+        // com combate. Ele quebrava a missão principal: GerenciadorJogo concede a
+        // Antena a QUALQUER vitória contra um inimigo com "Rato" no nome, então
+        // derrotar esse rato da rua entregava a peça e deixava o conteúdo do andar 0
+        // (o ninho atrás do balcão, ver Mapa/LocalAndarZero) sem função nenhuma -
+        // ele passava a responder "o ninho está vazio agora" antes do jogador ter
+        // ido lá. Os encontros agora acontecem dentro dos locais, pelas ações.
     }
 }

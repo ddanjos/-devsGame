@@ -81,9 +81,9 @@ namespace SurvivorGame.Mapa
         {
             if (Random.Shared.Next(100) < 45)
             {
-                var lata = new Consumivel("Lata Amassada", "Uma lata de comida, ainda dá pra comer.", 1, 'c', cura: 15);
+                var lata = new Consumivel("Lata Amassada", "Uma lata de comida, ainda dá pra comer.", 1, 'c',
+                    cura: 15, restauraFome: 20);
                 bool coletou = jogador.Inventario.AdicionarItem(lata);
-                if (coletou) jogador.RestaurarFome(20);
 
                 return new ResultadoAcao
                 {

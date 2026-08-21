@@ -96,9 +96,9 @@ namespace SurvivorGame.Mapa
                 {
                     if (Random.Shared.Next(100) < 50)
                     {
-                        var agua = new Consumivel("Garrafa de Água", "Água engarrafada, ainda lacrada.", 1, 'u', cura: 5);
+                        var agua = new Consumivel("Garrafa de Água", "Água engarrafada, ainda lacrada.", 1, 'u',
+                            cura: 5, restauraSede: 25);
                         bool coletou = jogador.Inventario.AdicionarItem(agua);
-                        if (coletou) jogador.RestaurarSede(25);
                         return new ResultadoAcao
                         {
                             Mensagem = coletou
@@ -173,9 +173,9 @@ namespace SurvivorGame.Mapa
                 new AcaoLocal("Chamar e tentar conversar", custoFome: 3, custoSede: 3, jogador =>
                 {
                     // Recompensa por não partir pra briga - variedade de solução.
-                    var lata = new Consumivel("Ração Trocada", "Ganha de um estranho. Vale mais do que parece.", 1, 'c', cura: 20);
+                    var lata = new Consumivel("Ração Trocada", "Ganha de um estranho. Vale mais do que parece.", 1, 'c',
+                        cura: 20, restauraFome: 20);
                     bool coletou = jogador.Inventario.AdicionarItem(lata);
-                    if (coletou) jogador.RestaurarFome(20);
 
                     return new ResultadoAcao
                     {
@@ -208,9 +208,9 @@ namespace SurvivorGame.Mapa
                         };
                     }
 
-                    var fruta = new Consumivel("Fruta do Mato", "Pequena e azeda, mas é comida.", 1, 'c', cura: 8);
+                    var fruta = new Consumivel("Fruta do Mato", "Pequena e azeda, mas é comida.", 1, 'c',
+                        cura: 8, restauraFome: 15);
                     bool coletou = jogador.Inventario.AdicionarItem(fruta);
-                    if (coletou) jogador.RestaurarFome(15);
                     return new ResultadoAcao
                     {
                         Mensagem = coletou
@@ -290,9 +290,9 @@ namespace SurvivorGame.Mapa
                 new AcaoLocal("Recolher as latas deixadas", custoFome: 3, custoSede: 3, jogador =>
                 {
                     var conserva = new Consumivel("Conserva de Museu",
-                        "Enlatada, fora da validade, mas intacta.", 1, 'c', cura: 18);
+                        "Enlatada, fora da validade, mas intacta.", 1, 'c',
+                        cura: 18, restauraFome: 25);
                     bool coletou = jogador.Inventario.AdicionarItem(conserva);
-                    if (coletou) jogador.RestaurarFome(25);
                     return new ResultadoAcao
                     {
                         Mensagem = coletou
