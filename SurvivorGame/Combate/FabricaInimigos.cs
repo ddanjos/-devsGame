@@ -109,5 +109,6 @@ namespace SurvivorGame.Combate
             ArteUtils.CarregarArteInimigo("Artes/Inimigos/saqueador.xp");
         public static ScreenSurface CarregarArteEnxame() =>
             ArteUtils.CarregarArteInimigo("Artes/Inimigos/enxamedemosquitos.xp");
+        //teste
     }
 }
