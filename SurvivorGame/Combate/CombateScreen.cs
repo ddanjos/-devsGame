@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using SadConsole;
 using SadConsole.Input;
@@ -7,16 +8,20 @@ using SadRogue.Primitives;
 using SurvivorGame.Inventario;
 using SurvivorGame.Mapa;
 using SurvivorGame.Regras;
+using SurvivorGame.Utilitarios;
 
 namespace SurvivorGame.Combate
 {
     internal class CombateScreen : ScreenSurface
     {
+        /// <summary>
+        /// Diretivas e Variaveis.
+        /// </summary>
         private enum Fase { MenuPrincipal, MenuAtaques, MenuItens, VendoStatus, Mensagem, FimDeCombate }
 
         private readonly IScreenObject _telaAnterior;
         private readonly SessaoCombate _sessao;
-        private readonly ScreenSurface? _arteXP;
+        private ScreenSurface? _arteXP;
         private readonly InimigoNoMapa? _inimigoNoMapa;
         private readonly MapaInimigos? _mapaInimigos;
         private readonly Action? _aoSairDoCombate;
@@ -33,7 +38,9 @@ namespace SurvivorGame.Combate
         private ResultadoCombate _resultadoFinal = ResultadoCombate.EmAndamento;
         private string _mensagemRecompensa = string.Empty;
 
-        // Sobrecarga Principal: Recebe InimigoNoMapa e MapaInimigos para poder removê-lo
+        // Construtores e entrada do teclado
+
+                // Sobrecarga Principal: Recebe InimigoNoMapa e MapaInimigos para poder removê-lo
         public CombateScreen(Personagem jogador, InimigoNoMapa inimigoNoMapa, MapaInimigos mapaInimigos, IScreenObject telaAnterior, int largura, int altura, Action? aoSairDoCombate = null)
             : this(jogador, inimigoNoMapa.DadosCombate, telaAnterior, largura, altura, inimigoNoMapa.ArteXP)
         {
@@ -43,16 +50,43 @@ namespace SurvivorGame.Combate
         }
 
         public CombateScreen(Personagem jogador, Inimigo inimigo, IScreenObject telaAnterior, int largura, int altura, ScreenSurface? arteXP = null)
-            : base(largura, altura)
+    : base(largura, altura)
         {
             _telaAnterior = telaAnterior;
-            _arteXP = arteXP;
             _sessao = new SessaoCombate(jogador, inimigo);
+
+            // CORREÇÃO: Passa o nome puro do inimigo sem remover espaços ou forçar minúsculas,
+            // deixando o ArteUtils testar os caminhos originais em disco e resolver os conflitos.
+            if (arteXP is null)
+            {
+                try
+                {
+                    // Transforma o nome do inimigo em minúsculo e remove todos os espaços e acentos
+                    string nomeArquivo = inimigo.Nome.ToLower().Replace(" ", "");
+
+                    // Remove acentuações comuns para bater com os arquivos renomeados
+                    nomeArquivo = nomeArquivo
+                        .Replace("ã", "a").Replace("á", "a")
+                        .Replace("é", "e").Replace("ó", "o");
+
+                    string caminhoProposto = Path.Combine("Artes", "Inimigos", $"{nomeArquivo}.xp");
+                    _arteXP = ArteUtils.CarregarArteInimigo(caminhoProposto);
+                }
+                catch
+                {
+                    _arteXP = null;
+                }
+            }
+            else
+            {
+                _arteXP = arteXP;
+            }
 
             UseKeyboard = true;
             IsFocused = true;
 
             _sessao.IniciarTurnoJogador();
+
 
             // O primeiro turno já consome Fome/Sede e pode matar por inanição.
             // Sem esta checagem o combate começava com o jogador em 0 de vida e
@@ -120,7 +154,6 @@ namespace SurvivorGame.Combate
                             return true;
                         }
 
-                        // Redesenha a tela do overworld para limpar o sprite do inimigo
                         _aoSairDoCombate?.Invoke();
                         Game.Instance.Screen = _telaAnterior;
                         Game.Instance.Screen!.IsFocused = true;
@@ -155,7 +188,7 @@ namespace SurvivorGame.Combate
                 confirmar();
             }
         }
-
+        // Logica de combate, Menus e renderizacao
         private void ConfirmarMenuPrincipal()
         {
             switch (_indiceSelecionado)
@@ -383,31 +416,12 @@ namespace SurvivorGame.Combate
                     DesenharStatusJogador();
                     if (_filaMensagens.Count > 0)
                         Surface.Print(2, Height - 6, _filaMensagens.Peek(), Color.Yellow, Color.Black);
-                    Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black);
-                    break;
-
-                case Fase.FimDeCombate:
-                    string textoFinal = _resultadoFinal switch
-                    {
-                        ResultadoCombate.Vitoria => $"Você derrotou {_sessao.Inimigo.Nome}!{_mensagemRecompensa}",
-                        ResultadoCombate.Derrota => $"{_sessao.Jogador.Nome} foi derrotado...",
-                        ResultadoCombate.Fugiu => "Você fugiu da batalha.",
-                        _ => ""
-                    };
-                    Surface.Print(2, Height / 2, textoFinal, Color.White, Color.Black);
-                    Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black);
-                    break;
+                    Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black); break;
+                case Fase.FimDeCombate: string textoFinal = _resultadoFinal switch { ResultadoCombate.Vitoria => $"Você derrotou {_sessao.Inimigo.Nome}!{_mensagemRecompensa}", ResultadoCombate.Derrota => $"{_sessao.Jogador.Nome} foi derrotado...", ResultadoCombate.Fugiu => "Você fugiu da batalha.", _ => "" }; Surface.Print(2, Height / 2, textoFinal, Color.White, Color.Black); Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black); break;
             }
         }
-
-        private void DesenharStatusJogador()
-        {
-            int y = Height - 10;
-            Surface.Print(2, y, $"{_sessao.Jogador.Nome}   Rodada {_sessao.Rodada}   Iniciativa: {_sessao.Iniciativa}", Color.LimeGreen, Color.Black);
-            Surface.Print(2, y + 1, $"HP: {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}   Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.White, Color.Black);
-        }
-
-        private void DesenharMenu(IReadOnlyList<string> opcoes, int yInicial)
+        private void DesenharStatusJogador() { int y = Height - 10; Surface.Print(2, y, $"{_sessao.Jogador.Nome}   Rodada {_sessao.Rodada}   Iniciativa: {_sessao.Iniciativa}", Color.LimeGreen, Color.Black); Surface.Print(2, y + 1, $"HP: {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}   Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.White, Color.Black); }
+        private void DesenharMenu(System.Collections.Generic.IReadOnlyList<string> opcoes, int yInicial)
         {
             for (int i = 0; i < opcoes.Count; i++)
             {
@@ -417,5 +431,6 @@ namespace SurvivorGame.Combate
                 Surface.Print(2, yInicial + i, prefixo + opcoes[i], cor, Color.Black);
             }
         }
+
     }
 }

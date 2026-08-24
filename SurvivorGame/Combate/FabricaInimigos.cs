@@ -101,5 +101,14 @@ namespace SurvivorGame.Combate
         /// nome + HP, então eles funcionam normal até alguém desenhar.</summary>
         public static ScreenSurface CarregarArteRato() =>
             ArteUtils.CarregarArteInimigo("Artes/Inimigos/ratoselvagem.xp");
+        public static ScreenSurface CarregarArteCao() =>
+            ArteUtils.CarregarArteInimigo("Artes/Inimigos/caoassilvestrado.xp");
+        public static ScreenSurface CarregarArteCaoAlfa() =>
+            ArteUtils.CarregarArteInimigo("Artes/Inimigos/ViraLataAlfa.xp");
+        public static ScreenSurface CarregarArteSaqueador() =>
+            ArteUtils.CarregarArteInimigo("Artes/Inimigos/saqueador.xp");
+        public static ScreenSurface CarregarArteEnxame() =>
+            ArteUtils.CarregarArteInimigo("Artes/Inimigos/enxamedemosquitos.xp");
+        //teste
     }
 }

@@ -130,7 +130,9 @@ namespace SurvivorGame.Mapa
                     return new ResultadoAcao
                     {
                         Mensagem = "Um vira-lata enorme se levanta de cima dos fardos, rosnando. Ele não vai deixar você chegar perto da bateria.",
-                        IniciarCombateCom = FabricaInimigos.CriarViraLataAlfa()
+                        IniciarCombateCom = FabricaInimigos.CriarViraLataAlfa(),
+                        ArteInimigo = FabricaInimigos.CarregarArteCaoAlfa()
+
                     };
                 }),
 
@@ -167,7 +169,8 @@ namespace SurvivorGame.Mapa
                     new ResultadoAcao
                     {
                         Mensagem = "Um homem magro sai de trás de uma prateleira com um cano na mão. \"Esse aqui é meu\", ele diz.",
-                        IniciarCombateCom = FabricaInimigos.CriarSaqueador()
+                        IniciarCombateCom = FabricaInimigos.CriarSaqueador(),
+                        ArteInimigo= FabricaInimigos.CarregarArteSaqueador()
                     }),
 
                 new AcaoLocal("Chamar e tentar conversar", custoFome: 3, custoSede: 3, jogador =>
@@ -204,7 +207,8 @@ namespace SurvivorGame.Mapa
                         return new ResultadoAcao
                         {
                             Mensagem = "Um cão magro salta do meio do mato, dentes à mostra!",
-                            IniciarCombateCom = FabricaInimigos.CriarCaoAssilvestrado()
+                            IniciarCombateCom = FabricaInimigos.CriarCaoAssilvestrado(),
+                            ArteInimigo = FabricaInimigos.CarregarArteCao()
                         };
                     }
 
@@ -267,7 +271,8 @@ namespace SurvivorGame.Mapa
                     new ResultadoAcao
                     {
                         Mensagem = "Você abre o barril. Uma nuvem zumbindo sai de dentro, furiosa e minúscula.",
-                        IniciarCombateCom = FabricaInimigos.CriarEnxameDeMosquitos()
+                        IniciarCombateCom = FabricaInimigos.CriarEnxameDeMosquitos(),
+                        ArteInimigo = FabricaInimigos.CarregarArteEnxame()
                     }),
 
                 new AcaoLocal("Ler os painéis da exposição", custoFome: 0, custoSede: 0, jogador =>

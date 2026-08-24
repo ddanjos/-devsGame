@@ -59,4 +59,19 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Artes\Inimigos\caoassilvestrado.xp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Artes\Inimigos\enxamedemosquitos.xp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Artes\Inimigos\saqueador.xp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Artes\Inimigos\ViraLataAlfa.xp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
