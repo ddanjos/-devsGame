@@ -1,12 +1,46 @@
-﻿using System.IO;
+﻿using Microsoft.Xna.Framework.Audio;
 using SadConsole;
 using SadConsole.Readers;
-
+using SadConsole.UI.Controls;
+using SurvivorGame.Combate;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.IO;
 namespace SurvivorGame.Utilitarios;
 
 public static class ArteUtils
 {
-    public static ScreenSurface CarregarArteInimigo(string caminhoXP) => CarregarXP(caminhoXP);
+    public static ScreenSurface CarregarArteInimigo(string caminhoXP)
+    {
+        // Se o caminho direto não existir, tenta resolver problemas de letras maiúsculas/minúsculas
+        if (!File.Exists(caminhoXP))
+        {
+            string diretorio = Path.GetDirectoryName(caminhoXP) ?? "";
+            string nomeArquivo = Path.GetFileName(caminhoXP);
+
+            // Tenta achar forçando o nome do arquivo todo em minúsculo
+            string caminhoMinusculo = Path.Combine(diretorio, nomeArquivo.ToLower());
+            if (File.Exists(caminhoMinusculo))
+            {
+                caminhoXP = caminhoMinusculo;
+            }
+            // Tenta achar forçando a primeira letra em maiúsculo (PascalCase simples) se o de cima falhar
+            else if (nomeArquivo.Length > 0)
+            {
+                string caminhoPascal = Path.Combine(diretorio, char.ToUpper(nomeArquivo[0]) + nomeArquivo.Substring(1));
+                if (File.Exists(caminhoPascal))
+                {
+                    caminhoXP = caminhoPascal;
+                }
+                // Fallback de segurança extrema: se não achar nada na pasta de inimigos, usa o ratoselvagem para o jogo não travar
+                else if (caminhoXP.Contains("Inimigos"))
+                {
+                    caminhoXP = Path.Combine(diretorio, "ratoselvagem.xp");
+                }
+            }
+        }
+
+        return CarregarXP(caminhoXP);
+    }
 
     /// <summary>
     /// Mesma coisa que CarregarArteInimigo, só com um nome que deixa claro que
@@ -37,3 +71,7 @@ public static class ArteUtils
         return superficie;
     }
 }
+    
+
+
+
