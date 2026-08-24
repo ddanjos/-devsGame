@@ -285,7 +285,10 @@ namespace SurvivorGame.Mapa
             });
 
         /// <summary>Museu de Hábitos e Costumes - descoberta garantida, sem sorteio.
-        /// Dá previsibilidade num jogo cheio de aleatoriedade.</summary>
+        /// Dá previsibilidade num jogo cheio de aleatoriedade. Também é, de
+        /// propósito, um local SEM inimigo nenhum - por isso guarda o Podão
+        /// Enferrujado (dano 20, acima do Cano de Ferro do porão da ProWay):
+        /// equipamento bom que se ganha por explorar, não só por vencer luta.</summary>
         private static ILocalExploravel CriarMuseuHabitos() => new LocalCidade(
             "Museu de Hábitos e Costumes",
             "Vitrines com objetos do dia a dia de gente que morreu há mais de um século - " +
@@ -303,6 +306,19 @@ namespace SurvivorGame.Mapa
                         Mensagem = coletou
                             ? "Quem passou por aqui deixou comida pra trás com pressa. Boa pra você."
                             : "Tem comida aqui, mas sua mochila está cheia."
+                    };
+                }),
+
+                new AcaoLocal("Vasculhar o expositor de ferramentas antigas", custoFome: 4, custoSede: 4, jogador =>
+                {
+                    var podao = new Arma("Podão Enferrujado",
+                        "Ferramenta de jardinagem, pesada e enferrujada, mas ainda corta.", 1, dano: 20, simbolo: '/');
+                    bool coletou = jogador.Inventario.AdicionarItem(podao);
+                    return new ResultadoAcao
+                    {
+                        Mensagem = coletou
+                            ? "Atrás do vidro quebrado, entre foices e podões de exposição, um deles ainda está inteiro o bastante pra usar. (Equipe pelo inventário!)"
+                            : "Tem um podão inteiro aqui, mas sua mochila está cheia."
                     };
                 }),
 
