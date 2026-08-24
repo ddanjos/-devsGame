@@ -1,11 +1,8 @@
-using System;
 using SadConsole;
 using SadConsole.Configuration;
 using SadRogue.Primitives;
 using SurvivorGame.Cenarios;
-using SurvivorGame.Combate;
 using SurvivorGame.Mapa;
-using SurvivorGame.Utilitarios;
 using SurvivorGame.Ui;
 
 namespace SurvivorGame

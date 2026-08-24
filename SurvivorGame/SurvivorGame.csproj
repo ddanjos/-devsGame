@@ -69,7 +69,7 @@
     <None Update="Artes\Inimigos\saqueador.xp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Artes\Inimigos\viralataalfa.xp">
+    <None Update="Artes\Inimigos\ViraLataAlfa.xp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
