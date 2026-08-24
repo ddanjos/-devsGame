@@ -1,5 +1,7 @@
-﻿using SadConsole;
+﻿using System.IO;
+using SadConsole;
 using SadConsole.Readers;
+
 namespace SurvivorGame.Utilitarios;
 
 public static class ArteUtils

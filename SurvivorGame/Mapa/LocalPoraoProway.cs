@@ -64,7 +64,7 @@ namespace SurvivorGame.Mapa
                         ? "Debaixo de uma caixa mofada, um cano de ferro pesado. Melhor que ir com as mãos vazias. (Equipe pelo inventário!)"
                         : "Tem um cano de ferro aqui, mas sua mochila está cheia."
                 };
-            }
+        }
 
             return new ResultadoAcao { Mensagem = "Só caixas vazias e mofo. Nada de útil por aqui - ainda." };
         }

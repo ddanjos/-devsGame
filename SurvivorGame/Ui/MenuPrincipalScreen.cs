@@ -1,46 +1,59 @@
 ﻿using System;
+using System.Collections.Generic;
 using SadConsole;
-using SadConsole.Input;
-using SadRogue.Primitives;
+using SurvivorGame.Regras;
 
 namespace SurvivorGame.Ui
 {
-    // Mudamos para ScreenSurface para acabar com o conflito com System.Console
-    public class MenuPrincipalScreen : ScreenSurface
+    /// <summary>
+    /// MENU DO JOGO (SCRUM-8) - a primeira tela da partida.
+    ///
+    /// Era uma tela que desenhava e lia o teclado por conta própria; virou uma
+    /// subclasse de TelaDeMenu quando o Menu de Pause (SCRUM-13) apareceu e as
+    /// duas ficaram idênticas em estrutura. Agora esta classe só DECLARA o que
+    /// aparece - navegação, desenho e seleção são da classe base.
+    ///
+    /// "Continuar" só fica disponível se existir um savegame.json (SCRUM-11).
+    /// Desabilitado ele continua visível, em cinza, pro jogador saber que a opção
+    /// existe e por que não dá pra usar agora.
+    /// </summary>
+    internal class MenuPrincipalScreen : TelaDeMenu
     {
-        public MenuPrincipalScreen(int width, int height) : base(width, height)
+        protected override string Titulo => "Survivor Blu";
+        protected override string? Subtitulo => "Blumenau Apocalíptica";
+        protected override IReadOnlyList<ItemDeMenu> Opcoes => _opcoes;
+
+        private readonly List<ItemDeMenu> _opcoes;
+
+        public MenuPrincipalScreen(int largura, int altura) : base(largura, altura)
         {
-            // Desenha os textos na tela usando a propriedade Surface nativa
-            string titulo = "Survivor Blu";
-            string subTitulo = "Blumenau Apocaliptica";
-            string instrucao1 = "[ ENTER ] Iniciar Novo Jogo";
-            string instrucao2 = "[ ESC ] Sair do Jogo";
+            DateTime? quando = SaveJogo.QuandoFoiSalvo();
 
-            this.Surface.Print(width / 2 - titulo.Length / 2, height / 3, titulo, Color.Red);
-            this.Surface.Print(width / 2 - subTitulo.Length / 2, (height / 3) + 2, subTitulo, Color.Gray);
+            _opcoes = new List<ItemDeMenu>
+            {
+                new("Continuar",
+                    Continuar,
+                    habilitado: quando is not null,
+                    detalhe: quando is not null
+                        ? $"salvo em {quando:dd/MM/yyyy HH:mm}"
+                        : "nenhum jogo salvo"),
 
-            this.Surface.Print(width / 2 - instrucao1.Length / 2, (height / 2), instrucao1, Color.White);
-            this.Surface.Print(width / 2 - instrucao2.Length / 2, (height / 2) + 2, instrucao2, Color.White);
+                new("Novo Jogo", Program.IniciarNovaPartida),
+
+                new("Sair do Jogo", () => Game.Instance.MonoGameInstance.Exit()),
+            };
+
+            Iniciar();
         }
 
-        // Este método captura com precisão as teclas pressionadas na tela do Menu
-        public override bool ProcessKeyboard(Keyboard keyboard)
+        /// <summary>Se o save estiver corrompido, Carregar() devolve null - aí, em
+        /// vez de travar, avisamos e deixamos o jogador escolher "Novo Jogo".</summary>
+        private void Continuar()
         {
-            // Se pressionar Enter, inicia a partida chamando o Program
-            if (keyboard.IsKeyPressed(Keys.Enter))
-            {
-                Program.IniciarNovaPartida();
-                return true;
-            }
+            if (Program.CarregarPartida()) return;
 
-            // Se pressionar Esc, fecha o aplicativo com segurança
-            if (keyboard.IsKeyPressed(Keys.Escape))
-            {
-                Game.Instance.MonoGameInstance.Exit();
-                return true;
-            }
-
-            return base.ProcessKeyboard(keyboard);
+            Mensagem = "Não foi possível ler o jogo salvo. Comece um Novo Jogo.";
+            Redesenhar();
         }
     }
 }

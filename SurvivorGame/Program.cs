@@ -1,7 +1,9 @@
+using System;
 using SadConsole;
 using SadConsole.Configuration;
 using SadRogue.Primitives;
 using SurvivorGame.Cenarios;
+using SurvivorGame.Combate;
 using SurvivorGame.Mapa;
 using SurvivorGame.Ui;
 
@@ -19,7 +21,18 @@ namespace SurvivorGame
 
         public static void Main(string[] args)
         {
+            // Partida nova: zera o progresso da missão (as 3 peças do rádio) e o
+            // estado guardado dos locais. Sem isso, rodar o jogo de novo na mesma
+            // execução herdaria as peças da partida anterior.
+            SurvivorGame.Regras.GerenciadorJogo.Reiniciar();
+            FabricaLocais.Reiniciar();
+
             _terreno = new MapaCidadeBlumenau();
+            _itensNoChao = new MapaJogo();
+            _inimigosNoMapa = new MapaInimigos();
+
+            Point entrada = _terreno.PontoEntrada;
+            _personagem = new Personagem("Sobrevivente", entrada.X, entrada.Y);
 
             // A janela precisa caber o maior cenário do jogo, não só a cidade: os
             // mapas de interior desenhados pelo Lindomar em REXPaint são 60x60
@@ -69,6 +82,7 @@ namespace SurvivorGame
                 return;
 
             var mapaScreen = new MapaScreen(_terreno, _itensNoChao, _inimigosNoMapa, _personagem);
+
             Game.Instance.Screen = mapaScreen;
             Game.Instance.Screen.IsFocused = true;
         }

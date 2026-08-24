@@ -8,6 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Artes\Inimigos\ratoselvagem.xp" />
+    <None Remove="Artes\Icones\icon_apple.xp" />
+    <None Remove="Artes\Icones\icon_armor.xp" />
+    <None Remove="Artes\Icones\icon_weapon.xp" />
+    <None Remove="Artes\Cenarios\mapa_inicio_teste.xp" />
+    <None Remove="Artes\Cenarios\location2.xp" />
+    <None Remove="Artes\Extras\knife.xp" />
+    <None Remove="Artes\Extras\npc_test.xp" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Se o "dotnet restore" não achar essas versões exatas, atualizem para as mais
          recentes listadas em https://www.nuget.org/packages/SadConsole -->
     <PackageReference Include="SadConsole" Version="10.10.1" />
