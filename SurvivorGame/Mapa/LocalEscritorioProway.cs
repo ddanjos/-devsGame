@@ -19,7 +19,7 @@ namespace SurvivorGame.Mapa
     /// </summary>
     internal class LocalEscritorioProway : ILocalExploravel
     {
-        public string Nome => "Escritório da ProWay";
+        public string Nome => "Escritorio da ProWay";
 
         /// <summary>A descrição muda conforme a missão avança: o rádio quebrado na
         /// mesa é o gancho inicial da história (ver HISTORIA.md) e vira o lembrete
@@ -35,7 +35,7 @@ namespace SurvivorGame.Mapa
                     "o fusível queimado. ";
 
                 if (GerenciadorJogo.PodeTransmitir)
-                    return baseTexto + "Você tem as três peças na mochila. É agora.";
+                    return baseTexto + "Você tem as tres pecas na mochila. É agora.";
 
                 var faltando = new List<string>();
                 if (!GerenciadorJogo.TemAntena) faltando.Add("a Antena");

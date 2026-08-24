@@ -26,7 +26,7 @@ namespace SurvivorGame.UI
         private int _indiceItem;
         private int _indiceAcao;
 
-        private readonly string[] _opcoesAcao = { "Usar / Equipar", "Desequipar", "Largar no Chão", "Voltar" };
+        private readonly string[] _opcoesAcao = { "Usar / Equipar", "Desequipar", "Largar no Chao", "Voltar" };
 
         public InventarioScreen(Personagem jogador, IScreenObject telaAnterior, int largura, int altura, MapaJogo? mapaJogo = null)
             : base(largura, altura)
@@ -158,8 +158,8 @@ namespace SurvivorGame.UI
             // aqui, mesmo com Fome, Sede, Força e Defesa já existindo no
             // Personagem. Equipar uma arma ou armadura muda Força/Defesa na hora,
             // porque estes valores são lidos direto do personagem a cada redesenho.
-            Surface.Print(2, 1, "=== INVENTÁRIO DO SOBREVIVENTE ===", Color.Yellow, Color.Black);
-            Surface.Print(2, 2, $"Nível {_jogador.Nivel}   HP: {_jogador.Vida}/{_jogador.VidaMaxima}", Color.LimeGreen, Color.Black);
+            Surface.Print(2, 1, "=== INVENTARIO DO SOBREVIVENTE ===", Color.Yellow, Color.Black);
+            Surface.Print(2, 2, $"NIvel {_jogador.Nivel}   HP: {_jogador.Vida}/{_jogador.VidaMaxima}", Color.LimeGreen, Color.Black);
             Surface.Print(2, 3, $"Fome: {_jogador.Fome}   Sede: {_jogador.Sede}   Dano: {_jogador.DanoBase}   Forca: {_jogador.Forca}   Defesa: {_jogador.Defesa}", Color.White, Color.Black);
 
             // Coluna Esquerda: Itens da Mochila
@@ -196,7 +196,7 @@ namespace SurvivorGame.UI
                 ScreenSurface icone = IconeUtils.ObterIcone(itens[_indiceItem]);
                 int iconeX = Width - icone.Width - 3;
                 int iconeY = 4;
-                Surface.Print(iconeX, iconeY - 1, "Ícone:", Color.Cyan, Color.Black);
+                Surface.Print(iconeX, iconeY - 1, "Icone:", Color.Cyan, Color.Black);
                 icone.Surface.Copy(Surface, iconeX, iconeY);
             }
 
@@ -204,7 +204,7 @@ namespace SurvivorGame.UI
             if (_modo == ModoInventario.SubMenuAcoes && itens.Count > 0)
             {
                 int yMenu = Height - 6;
-                Surface.Print(2, yMenu - 1, $"Opções para '{itens[_indiceItem].Nome}':", Color.Orange, Color.Black);
+                Surface.Print(2, yMenu - 1, $"Opcoes para '{itens[_indiceItem].Nome}':", Color.Orange, Color.Black);
 
                 for (int i = 0; i < _opcoesAcao.Length; i++)
                 {

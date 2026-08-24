@@ -48,13 +48,13 @@ namespace SurvivorGame.Regras
             if (nomeInimigo.Contains("Rato", StringComparison.OrdinalIgnoreCase) && !TemAntena)
             {
                 TemAntena = true;
-                return $" [PEÇA {PecasEncontradas}/3] No ninho do rato estava a Antena de Rádio!";
+                return $" [PEÇA {PecasEncontradas}/3] No ninho do rato estava a Antena de Radio!";
             }
 
             if (nomeInimigo.Contains("Vira-Lata", StringComparison.OrdinalIgnoreCase) && !TemBateria)
             {
                 TemBateria = true;
-                return $" [PEÇA {PecasEncontradas}/3] Você alcança a Bateria industrial no armazém!";
+                return $" [PEÇA {PecasEncontradas}/3] Voce alcança a Bateria industrial no armazem!";
             }
 
             return string.Empty;

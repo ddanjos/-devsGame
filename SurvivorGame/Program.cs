@@ -42,7 +42,7 @@ namespace SurvivorGame
             Builder startup = new Builder()
                 .SetScreenSize(larguraJanela, alturaJanela)
                 .OnStart(Game_Started);
-
+            System.Console.OutputEncoding = System.Text.Encoding.UTF8;
             Game.Create(startup);
             Game.Instance.Run();
             Game.Instance.Dispose();
