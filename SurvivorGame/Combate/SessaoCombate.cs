@@ -1,0 +1,167 @@
+﻿using System;
+using SurvivorGame.Regras;
+
+namespace SurvivorGame.Combate
+{
+    /// <summary>
+    /// O "motor" de UMA batalha: guarda a Energia acumulada, se o jogador está
+    /// defendendo, e aplica as regras (dano, cura, vitória/derrota). Não sabe
+    /// nada de tela/SadConsole - isso fica no CombateScreen.
+    ///
+    /// Importante: como essa classe é criada do zero a cada combate (veja o
+    /// construtor de CombateScreen) e descartada ao sair, a Energia NUNCA
+    /// sobrevive entre batalhas - exatamente o que foi pedido na spec.
+    /// </summary>
+    internal class SessaoCombate
+    {
+        public Personagem Jogador { get; }
+        public Inimigo Inimigo { get; }
+        public int Energia { get; private set; }
+        public bool Defendendo { get; private set; }
+        public Habilidade AtaqueBasico { get; }
+
+        /// <summary>Contador de rodadas do combate - a terminologia pedida pela
+        /// disciplina (Turno, Rodada, Iniciativa...) só existia como "Turno" no
+        /// código; Rodada estava faltando. Uma Rodada = um ciclo completo (turno do
+        /// jogador + contra-ataque do inimigo). Começa em 1 na primeira chamada de
+        /// IniciarTurnoJogador.</summary>
+        public int Rodada { get; private set; }
+
+        /// <summary>Quem age primeiro em cada Rodada. Hoje o jogador sempre tem a
+        /// Iniciativa (o combate não tem stat de Velocidade ainda pra decidir isso
+        /// dinamicamente) - fica exposto como propriedade, e não só um comentário,
+        /// pra já existir um lugar único pra ligar um cálculo de verdade (ex:
+        /// comparando Velocidade de Personagem/Inimigo) quando esse atributo for
+        /// implementado.</summary>
+        public string Iniciativa => Jogador.Nome;
+
+        public SessaoCombate(Personagem jogador, Inimigo inimigo)
+        {
+            Jogador = jogador;
+            Inimigo = inimigo;
+            Energia = 0;
+            Defendendo = false;
+            Rodada = 0;
+            AtaqueBasico = new Habilidade("Ataque", jogador.DanoBase);
+        }
+
+        /// <summary>Aviso de inanição/desidratação gerado no início do turno, ou
+        /// string vazia. O CombateScreen mostra isso junto das outras mensagens.</summary>
+        public string AvisoDeEstado { get; private set; } = string.Empty;
+
+        /// <summary>Dano por rodada quando Fome ou Sede está em 0.</summary>
+        private const int DanoPorInanicao = 3;
+
+        /// <summary>Chamem no início de cada turno do jogador (inclusive o primeiro): abre uma nova Rodada, ganha 1 de Energia, gasta 1 de Fome e 1 de Sede (spec do Henrique) e encerra o buff de Defender. Com Fome ou Sede em 0, o personagem ainda perde vida por inanição/desidratação.</summary>
+        public void IniciarTurnoJogador()
+        {
+            Rodada++;
+            Energia++;
+            Jogador.ConsumirFome(1);
+            Jogador.ConsumirSede(1);
+            Defendendo = false;
+
+            AvisoDeEstado = string.Empty;
+            if (Jogador.Fome <= 0 && Jogador.Sede <= 0)
+            {
+                Jogador.ReceberDanoDireto(DanoPorInanicao * 2);
+                AvisoDeEstado = $"Fome e sede no limite! Você perde {DanoPorInanicao * 2} de vida.";
+            }
+            else if (Jogador.Fome <= 0)
+            {
+                Jogador.ReceberDanoDireto(DanoPorInanicao);
+                AvisoDeEstado = $"Você está passando fome! Perde {DanoPorInanicao} de vida.";
+            }
+            else if (Jogador.Sede <= 0)
+            {
+                Jogador.ReceberDanoDireto(DanoPorInanicao);
+                AvisoDeEstado = $"Você está desidratado! Perde {DanoPorInanicao} de vida.";
+            }
+        }
+
+        /// <summary>
+        /// Fórmula de dano do jogo, definida pelo Henrique no SCRUM-7:
+        ///     Dano Final = (dano do golpe + Força de quem ataca) - Defesa do alvo
+        /// Nunca abaixo de DanoMinimo, senão um alvo com defesa alta viraria
+        /// invencível e o combate travaria sem ninguém conseguir vencer.
+        /// </summary>
+        private const int DanoMinimo = 1;
+
+        private static int CalcularDano(int danoDoGolpe, int forcaAtacante, int defesaAlvo)
+            => Math.Max(DanoMinimo, danoDoGolpe + forcaAtacante - defesaAlvo);
+
+        /// <summary>Usa uma habilidade (ataque básico ou especial) contra o inimigo.</summary>
+        public string Atacar(Habilidade habilidade)
+        {
+            if (habilidade.CustoEnergia > Energia)
+                return $"Energia insuficiente para usar {habilidade.Nome}.";
+
+            Energia -= habilidade.CustoEnergia;
+
+            int dano = CalcularDano(habilidade.Dano, Jogador.Forca, Inimigo.Defesa);
+            Inimigo.ReceberDano(dano);
+
+            return $"{Jogador.Nome} usou {habilidade.Nome} causando {dano} de dano.";
+        }
+
+        /// <summary>Reduz o próximo dano do inimigo pela metade. O buff acaba quando o próximo turno do jogador começa.</summary>
+        public string Defender()
+        {
+            Defendendo = true;
+            return $"{Jogador.Nome} se defendeu.";
+        }
+
+        /// <summary>Usa um item consumível do próprio inventário do jogador.</summary>
+        public string UsarItem(string nomeItem)
+        {
+            var consumivel = AcoesJogador.UsarItem(Jogador, nomeItem);
+            return consumivel != null
+                ? $"{Jogador.Nome} usou {consumivel.Nome} e recuperou {consumivel.Cura} de vida."
+                : $"Não foi possível usar {nomeItem}.";
+        }
+
+        /// <summary>Tenta fugir da batalha. Por enquanto sempre funciona.</summary>
+        public string Fugir()
+        {
+            // Se quiserem chance de falha: sorteiem aqui e, se falhar, deixem o
+            // CombateScreen chamar TurnoInimigo() em vez de encerrar o combate.
+            return $"{Jogador.Nome} fugiu da batalha!";
+        }
+
+        /// <summary>
+        /// O inimigo sorteia um dos seus ataques e usa. Se for uma "ação nula"
+        /// (ver AtaqueInimigo.EhAcaoNula), só o texto engraçado aparece e nenhum
+        /// dano é aplicado - é a piada do Earthbound que a spec do SCRUM-17 pede.
+        /// Senão, aplica a fórmula e reduz pela metade se o jogador defendeu.
+        /// </summary>
+        public string TurnoInimigo()
+        {
+            if (Inimigo.Ataques.Count == 0)
+                return $"{Inimigo.Nome} não fez nada.";
+
+            AtaqueInimigo ataque = Inimigo.Ataques[Random.Shared.Next(Inimigo.Ataques.Count)];
+
+            if (ataque.EhAcaoNula)
+                return ataque.MensagemAtaque;
+
+            int dano = CalcularDano(ataque.DanoBase, Inimigo.Forca, Jogador.Defesa);
+            if (Defendendo)
+                dano = Math.Max(DanoMinimo, dano / 2);
+
+            Jogador.ReceberDano(dano);
+
+            // A mensagem do ataque pode ter um {0} pro dano; se não tiver, cai no
+            // texto padrão pra nunca ficar sem log nenhum no combate.
+            return ataque.MensagemAtaque.Contains("{0}")
+                ? string.Format(ataque.MensagemAtaque, dano)
+                : $"{Inimigo.Nome} usou {ataque.NomeAtaque} dando {dano} de dano.";
+        }
+
+        public ResultadoCombate VerificarResultado()
+        {
+            if (Jogador.Vida <= 0) return ResultadoCombate.Derrota;
+            if (!Inimigo.EstaVivo) return ResultadoCombate.Vitoria;
+            return ResultadoCombate.EmAndamento;
+        }
+    }
+}
