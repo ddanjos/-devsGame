@@ -104,7 +104,7 @@ namespace SurvivorGame.Combate
         public static ScreenSurface CarregarArteCao() =>
             ArteUtils.CarregarArteInimigo("Artes/Inimigos/caoassilvestrado.xp");
         public static ScreenSurface CarregarArteCaoAlfa() =>
-            ArteUtils.CarregarArteInimigo("Artes/Inimigos/viralataalfa.xp");
+            ArteUtils.CarregarArteInimigo("Artes/Inimigos/ViraLataAlfa.xp");
         public static ScreenSurface CarregarArteSaqueador() =>
             ArteUtils.CarregarArteInimigo("Artes/Inimigos/saqueador.xp");
         public static ScreenSurface CarregarArteEnxame() =>

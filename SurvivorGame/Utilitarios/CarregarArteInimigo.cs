@@ -1,10 +1,5 @@
-﻿using Microsoft.Xna.Framework.Audio;
-using SadConsole;
+﻿using SadConsole;
 using SadConsole.Readers;
-using SadConsole.UI.Controls;
-using SurvivorGame.Combate;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.IO;
 namespace SurvivorGame.Utilitarios;
 
 public static class ArteUtils
