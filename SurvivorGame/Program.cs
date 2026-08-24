@@ -40,7 +40,7 @@ namespace SurvivorGame
             int alturaJanela = Math.Max(_terreno.Altura, 60);
 
             Builder startup = new Builder()
-                .SetScreenSize(larguraJanela, alturaJanela)
+                .SetWindowSizeInCells(larguraJanela, alturaJanela)
                 .OnStart(Game_Started);
             System.Console.OutputEncoding = System.Text.Encoding.UTF8;
             Game.Create(startup);
