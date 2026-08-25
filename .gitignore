@@ -363,3 +363,9 @@ MigrationBackup/
 FodyWeavers.xsd
 # Jogo salvo do jogador (SCRUM-11) - estado local, nao vai pro repositorio
 savegame.json
+
+# Rider
+.idea/
+
+# Config local do jogador
+config.json
