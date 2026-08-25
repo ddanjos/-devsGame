@@ -61,6 +61,9 @@ namespace SurvivorGame.Ui
 
         protected TelaDeMenu(int largura, int altura) : base(largura, altura)
         {
+            // Cobre MenuPrincipalScreen, PauseScreen e OpcoesScreen de uma vez só -
+            // ver Utilitarios/AjusteVisual pro porquê.
+            this.CorrigirProporcaoDeCelula();
             UseKeyboard = true;
         }
 

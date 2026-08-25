@@ -31,6 +31,8 @@ namespace SurvivorGame.UI
         public InventarioScreen(Personagem jogador, IScreenObject telaAnterior, int largura, int altura, MapaJogo? mapaJogo = null)
             : base(largura, altura)
         {
+            this.CorrigirProporcaoDeCelula();
+
             _jogador = jogador;
             _telaAnterior = telaAnterior;
             _mapaJogo = mapaJogo;

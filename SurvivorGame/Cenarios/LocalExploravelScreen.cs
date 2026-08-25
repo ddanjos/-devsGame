@@ -47,6 +47,8 @@ namespace SurvivorGame.Cenarios
             int largura, int altura)
             : base(largura, altura)
         {
+            this.CorrigirProporcaoDeCelula();
+
             _jogador = jogador;
             _telaAnterior = telaAnterior;
 
@@ -87,7 +89,7 @@ namespace SurvivorGame.Cenarios
         {
             if (keyboard.IsKeyPressed(Keys.I))
             {
-                Game.Instance.Screen = new InventarioScreen(_jogador, this, Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
+                Game.Instance.Screen = new InventarioScreen(_jogador, this, Program.LarguraJanela, Program.AlturaJanela);
                 Game.Instance.Screen.IsFocused = true;
                 return true;
             }
@@ -158,7 +160,7 @@ namespace SurvivorGame.Cenarios
 
                 Game.Instance.Screen = new FimDeJogoScreen(
                     venceu: true, FimDeJogoScreen.TextoVitoria,
-                    Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
+                    Program.LarguraJanela, Program.AlturaJanela);
                 Game.Instance.Screen.IsFocused = true;
                 return;
             }
@@ -175,7 +177,7 @@ namespace SurvivorGame.Cenarios
 
                 Game.Instance.Screen = new FimDeJogoScreen(
                     venceu: false, FimDeJogoScreen.TextoDerrotaInanicao,
-                    Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
+                    Program.LarguraJanela, Program.AlturaJanela);
                 Game.Instance.Screen.IsFocused = true;
                 return;
             }

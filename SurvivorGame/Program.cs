@@ -5,6 +5,7 @@ using SurvivorGame.Cenarios;
 using SurvivorGame.Mapa;
 using SurvivorGame.Ui;
 using SurvivorGame.Audio;
+using SurvivorGame.Utilitarios;
 
 namespace SurvivorGame
 {
@@ -18,6 +19,16 @@ namespace SurvivorGame
         private static int _larguraJanela;
         private static int _alturaJanela;
 
+        /// <summary>Tamanho da janela em CÉLULAS (não pixels). Outras telas usam
+        /// isto - em vez de Game.Instance.ScreenCellsX/Y - pra saber o tamanho
+        /// da janela: desde que passamos a abrir a janela com
+        /// SetWindowSizeInPixels (ver AjusteVisual.TamanhoCelula, abaixo),
+        /// ScreenCellsX/Y deixou de bater com essas variáveis, porque o
+        /// SadConsole calcula aquilo com a fonte NATIVA (8x16), não com a
+        /// célula 16x16 que a gente realmente usa pra desenhar.</summary>
+        public static int LarguraJanela => _larguraJanela;
+        public static int AlturaJanela => _alturaJanela;
+
         public static void Main(string[] args)
         {
             _terreno = new MapaCidadeBlumenau();
@@ -30,8 +41,20 @@ namespace SurvivorGame
             _larguraJanela = Math.Max(_terreno.Largura, 60);
             _alturaJanela = Math.Max(_terreno.Altura, 60);
 
+            // Antes isto era SetWindowSizeInCells(_larguraJanela, _alturaJanela),
+            // que dimensiona a janela usando a fonte NATIVA do SadConsole
+            // (8x16 pixels por célula - bem mais alta que larga). É essa
+            // proporção que deixava os cenários e sprites .xp achatados na
+            // horizontal. Agora abrimos a janela já do tamanho certo pra
+            // célula QUADRADA que o resto do jogo usa (ver
+            // AjusteVisual.CorrigirProporcaoDeCelula, chamado em toda tela) -
+            // a contagem de células continua sendo _larguraJanela x
+            // _alturaJanela, só o pixel de cada uma que fica maior e mais
+            // largo.
             Builder startup = new Builder()
-                .SetWindowSizeInCells(_larguraJanela, _alturaJanela)
+                .SetWindowSizeInPixels(
+                    _larguraJanela * AjusteVisual.TamanhoCelula.X,
+                    _alturaJanela * AjusteVisual.TamanhoCelula.Y)
                 .OnStart(Game_Started);
             System.Console.OutputEncoding = System.Text.Encoding.UTF8;
             Game.Create(startup);

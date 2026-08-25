@@ -40,6 +40,8 @@ namespace SurvivorGame.Cenarios
         public MapaScreen(IMapa terreno, MapaJogo itensNoChao, MapaInimigos inimigosNoMapa, Personagem personagem)
             : base(terreno.Largura, terreno.Altura)
         {
+            this.CorrigirProporcaoDeCelula();
+
             // A ORDEM IMPORTA: _personagem tem que ser o ÚLTIMO. A guarda de null
             // do OnFocused abaixo testa só ele, apostando que se ele já existe,
             // todo o resto também existe. Reordenar estas quatro linhas transforma
@@ -91,14 +93,14 @@ namespace SurvivorGame.Cenarios
             {
                 _escFoiSolto = false;
                 Game.Instance.Screen = new PauseScreen(
-                    _personagem, this, Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
+                    _personagem, this, Program.LarguraJanela, Program.AlturaJanela);
                 Game.Instance.Screen.IsFocused = true;
                 return true;
             }
 
             if (keyboard.IsKeyPressed(Keys.I))
             {
-                Game.Instance.Screen = new InventarioScreen(_personagem, this, Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY, _itensNoChao);
+                Game.Instance.Screen = new InventarioScreen(_personagem, this, Program.LarguraJanela, Program.AlturaJanela, _itensNoChao);
                 Game.Instance.Screen.IsFocused = true;
                 return true;
             }
@@ -170,8 +172,8 @@ namespace SurvivorGame.Cenarios
                     inimigoClicado,
                     _inimigosNoMapa,
                     this,
-                    Game.Instance.ScreenCellsX,
-                    Game.Instance.ScreenCellsY,
+                    Program.LarguraJanela,
+                    Program.AlturaJanela,
                     RedesenharMapaCompleto
                 );
 
@@ -207,14 +209,14 @@ namespace SurvivorGame.Cenarios
                 // são 60x60 e o mapa da cidade só tem 45 linhas - abrir o local no
                 // tamanho do mapa cortaria um quarto de cada desenho.
                 var tela = new LocalExploravelScreen(localJogavel, _personagem, this,
-                    Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
+                    Program.LarguraJanela, Program.AlturaJanela);
                 Game.Instance.Screen = tela;
                 Game.Instance.Screen.IsFocused = true;
                 return;
             }
 
             var cenario = new CenarioLocalScreen(local, this,
-                Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
+                Program.LarguraJanela, Program.AlturaJanela);
             Game.Instance.Screen = cenario;
             Game.Instance.Screen.IsFocused = true;
         }

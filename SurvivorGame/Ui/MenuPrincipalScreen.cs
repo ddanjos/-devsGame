@@ -30,7 +30,8 @@ namespace SurvivorGame.Ui
         public MenuPrincipalScreen(int width, int height) : base(width, height)
         {
             // 1. Textos do cabeçalho
-            string titulo = "O ULTIMO SINAL";
+            // 1. Textos do cabeçalho
+            string titulo = "    O ULTIMO SINAL";
             string subTitulo = "Blumenau Apocaliptica";
 
             // 2. Criamos uma superfície dedicada ao título

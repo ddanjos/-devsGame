@@ -50,6 +50,8 @@ namespace SurvivorGame.Cenarios
             MapaJogo? itensNoChao = null)
             : base(mapa.Largura, mapa.Altura)
         {
+            this.CorrigirProporcaoDeCelula();
+
             _mapa = mapa;
             _jogador = jogador;
             _telaAnterior = telaAnterior;

@@ -32,6 +32,8 @@ namespace SurvivorGame.Cenarios
         public FimDeJogoScreen(bool venceu, string detalhe, int largura, int altura)
             : base(largura, altura)
         {
+            this.CorrigirProporcaoDeCelula();
+
             _venceu = venceu;
             _detalhe = detalhe;
 

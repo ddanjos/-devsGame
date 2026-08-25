@@ -23,6 +23,8 @@ namespace SurvivorGame.Cenarios
         public CenarioLocalScreen(LocalMapa local, IScreenObject telaAnterior, int largura, int altura)
             : base(largura, altura)
         {
+            this.CorrigirProporcaoDeCelula();
+
             _telaAnterior = telaAnterior;
 
             UseKeyboard = true;

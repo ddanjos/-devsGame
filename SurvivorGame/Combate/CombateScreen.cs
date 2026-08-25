@@ -63,6 +63,8 @@ namespace SurvivorGame.Combate
         public CombateScreen(Personagem jogador, Inimigo inimigo, IScreenObject telaAnterior, int largura, int altura, ScreenSurface? arteXP = null)
     : base(largura, altura)
         {
+            this.CorrigirProporcaoDeCelula();
+
             _telaAnterior = telaAnterior;
             _sessao = new SessaoCombate(jogador, inimigo);
 
@@ -165,7 +167,7 @@ namespace SurvivorGame.Combate
                         {
                             Game.Instance.Screen = new Cenarios.FimDeJogoScreen(
                                 venceu: false, Cenarios.FimDeJogoScreen.TextoDerrota,
-                                Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
+                                Program.LarguraJanela, Program.AlturaJanela);
                             Game.Instance.Screen.IsFocused = true;
                             return true;
                         }
