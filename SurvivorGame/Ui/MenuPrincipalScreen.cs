@@ -24,7 +24,7 @@ namespace SurvivorGame.Ui
             surfaceTitulo.FontSize = surfaceTitulo.Font.GetFontSize(SadConsole.IFont.Sizes.Four);
 
     // 3. Desenhamos o título nesta superfície filha (na posição 0, 0 dela)
-    surfaceTitulo.Surface.Print(0, 0, titulo, new Color(52, 235, 143));
+    surfaceTitulo.Surface.Print(0, 0, titulo, new Color(91, 209, 215));
 
     // 4. Posicionamos a superfície do título de forma centralizada na tela principal
     // Como a fonte dobrou, o título ocupará (titulo.Length * 2) de largura na tela principal
