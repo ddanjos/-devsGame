@@ -38,8 +38,10 @@ namespace SurvivorGame.Cenarios
         // método rodar - o '= null!' só existe pra calar o aviso de nullability,
         // já que o compilador não enxerga através da chamada de método.
         private ILocalExploravel _local = null!;
+        // ALTERADO: Agora será uma ScreenSurface visual filha
         private ScreenSurface? _arteAtual;
         private int _indiceSelecionado;
+
         private string _mensagem = string.Empty;
 
         public LocalExploravelScreen(ILocalExploravel local, Personagem jogador, IScreenObject telaAnterior,
@@ -208,37 +210,89 @@ namespace SurvivorGame.Cenarios
         {
             _local = local;
             _indiceSelecionado = 0;
-            _arteAtual = local.CaminhoArte is not null
-                ? ArteUtils.CarregarArteCenario(local.CaminhoArte)
-                : null;
+
+            // Se já existia uma arte desenhada na tela antes, remove ela dos filhos visuais
+            if (_arteAtual is not null)
+            {
+                Children.Remove(_arteAtual);
+                _arteAtual = null;
+            }
+
+            if (local.CaminhoArte is not null)
+            {
+                //
+                // Criamos a superfície visual com o tamanho exato da arte do Lindomar
+                // E forçamos ela a usar a fonte quadrada em tamanho 1 (ex: 8x8 pixels)
+                if (local.CaminhoArte is not null)
+                {
+                    // Carrega a matriz de células do REXPaint
+                    var dadosArte = ArteUtils.CarregarArteCenario(local.CaminhoArte);
+
+                    // Criamos a superfície visual com o tamanho exato da arte do Lindomar
+                    _arteAtual = new ScreenSurface(dadosArte.Width, dadosArte.Height);
+
+                    // FORÇAR FONTE QUADRADA: Alteramos o tamanho de exibição em pixels de cada célula.
+                    // Se a arte do REXPaint foi feita pensando em blocos de 8x8 pixels:
+                    _arteAtual.FontSize = new Point(8, 8);
+
+                    // NOTA: Se você achar que a imagem ficou muito pequena na tela, 
+                    // você pode dobrar o tamanho dela mudando para 16x16 pixels assim:
+                    // _arteAtual.FontSize = new Point(16, 16);
+
+                    // Copia os dados puros do arquivo para a nossa nova superfície visual quadrada
+                    dadosArte.Surface.Copy(_arteAtual.Surface, 0, 0);
+
+                    // Adiciona essa superfície como filha desta tela para o SadConsole renderizá-la automaticamente
+                    Children.Add(_arteAtual);
+                }
+
+            }
+
             Redesenhar();
         }
+
 
         private void Redesenhar()
         {
             Surface.Clear();
 
             int linha = 1;
+            int alturaOcupadaPelaArte = 0;
 
             if (_arteAtual is not null)
             {
+                // Calcula a posição centralizada horizontalmente na tela
                 int posX = System.Math.Max(0, (Width / 2) - (_arteAtual.Width / 2));
-                _arteAtual.Surface.Copy(Surface, posX, linha);
+
+                // Posiciona a camada quadrada no topo
+                _arteAtual.Position = new Point(posX, linha);
+
+                // Descobre exatamente quantas linhas a arte ocupa fisicamente na tela do jogo.
+                // Como a tela principal usa uma fonte 8x16 (dobro da altura da arte 8x8),
+                // dividimos a altura da arte por 2 para o texto começar logo abaixo dela.
+                alturaOcupadaPelaArte = linha + (_arteAtual.Height / 2) + 1;
             }
 
-            Surface.Print(2, Height - 15, _local.Nome, Color.Gold, Color.Black);
+            // Se tiver arte, o texto começa abaixo dela. Se não tiver, começa na linha 2.
+            int linhaNome = alturaOcupadaPelaArte > 0 ? alturaOcupadaPelaArte : 2;
+            Surface.Print(2, linhaNome, _local.Nome, Color.Gold, Color.Black);
 
-            int linhaDescricao = Height - 13;
+            // A descrição começa duas linhas abaixo do nome
+            int linhaDescricao = linhaNome + 2;
             foreach (string trecho in QuebrarLinhas(_local.Descricao, Width - 4))
             {
                 Surface.Print(2, linhaDescricao, trecho, Color.White, Color.Black);
                 linhaDescricao++;
             }
 
-            Surface.Print(2, Height - 9,
+            // O status (HP, Fome, Sede) começa duas linhas abaixo do fim da descrição
+            int linhaStatus = linhaDescricao + 1;
+            Surface.Print(2, linhaStatus,
                 $"HP: {_jogador.Vida}/{_jogador.VidaMaxima}   Fome: {_jogador.Fome}   Sede: {_jogador.Sede}",
                 Color.LightGreen, Color.Black);
 
+            // As ações começam duas linhas abaixo do status
+            int linhaAcoes = linhaStatus + 2;
             IReadOnlyList<AcaoLocal> acoes = _local.Acoes;
             for (int i = 0; i < acoes.Count; i++)
             {
@@ -248,24 +302,21 @@ namespace SurvivorGame.Cenarios
                 string custo = acoes[i].CustoFome > 0 || acoes[i].CustoSede > 0
                     ? $" (Fome -{acoes[i].CustoFome}, Sede -{acoes[i].CustoSede})"
                     : string.Empty;
-                Surface.Print(2, Height - 7 + i, prefixo + acoes[i].Texto + custo, cor, Color.Black);
+                Surface.Print(2, linhaAcoes + i, prefixo + acoes[i].Texto + custo, cor, Color.Black);
             }
 
-            // A mensagem PRECISA ser quebrada em linhas: o Print do SadConsole
-            // escreve num buffer plano, então um texto maior que a largura da tela
-            // transborda pra linha de baixo e suja o rodapé de controles. Textos
-            // longos (o diário do Museu da Família Colonial tem 228 caracteres)
-            // faziam exatamente isso. Imprime de baixo pra cima, acima do rodapé.
+            // A mensagem do sistema continua sendo impressa de baixo para cima no rodapé fixo
             if (!string.IsNullOrEmpty(_mensagem))
             {
                 List<string> linhas = QuebrarLinhas(_mensagem, Width - 4).ToList();
-                int linhaInicial = Height - 1 - linhas.Count;
+                int linhaInicial = Height - 2 - linhas.Count;
                 for (int i = 0; i < linhas.Count; i++)
                     Surface.Print(2, linhaInicial + i, linhas[i], Color.Cyan, Color.Black);
             }
 
             Surface.Print(2, Height - 1, "Setas + Enter para escolher | I para inventário | ESC para voltar", Color.Gray, Color.Black);
         }
+
 
         private static IEnumerable<string> QuebrarLinhas(string texto, int larguraMaxima)
         {

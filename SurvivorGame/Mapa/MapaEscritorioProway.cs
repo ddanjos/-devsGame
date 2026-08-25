@@ -84,10 +84,18 @@ namespace SurvivorGame.Mapa
             return _arte.Surface.GetBackground(x, y) == CorParede;
         }
 
-        /// <summary>Copia a arte do Lindomar direto pra tela, célula por célula -
-        /// é o mapa em si, não uma ilustração ao lado dele.</summary>
+        /// <summary>Copia a arte do Lindomar direto pra tela usando as dimensões 
+        /// originais exatas para evitar que o desenho fique puxado ou esticado.</summary>
         public void DesenharEm(ScreenSurface superficie)
-            => _arte.Surface.Copy(superficie.Surface, 0, 0);
+        {
+            // Limpa a área antiga para não sobrepor lixo visual
+            superficie.Surface.Clear();
+
+            // Copia especificando a subárea exata (da origem 0,0 até a Largura/Altura originais da arte)
+            // para o destino (0,0) da tela do jogo, garantindo proporção 1:1 pixel por pixel
+            _arte.Surface.Copy(0, 0, Largura, Altura, superficie.Surface, 0, 0);
+        }
+
 
         /// <summary>Pisou no elevador? Manda pro andar 0. Pisou na escada? Manda
         /// pro porão (MapaMasmorra). ESC a qualquer momento volta direto pro
