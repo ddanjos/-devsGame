@@ -1,5 +1,6 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using SurvivorGame.Inventario;
+using SurvivorGame.Regras;
 
 namespace SurvivorGame.Mapa
 {
@@ -23,13 +24,25 @@ namespace SurvivorGame.Mapa
             "Às vezes, sem ninguém tocar em nada, um dos sinos eletrônicos solta uma " +
             "nota sozinho - energia residual, ou vontade própria.";
 
+        public string? CaminhoArte => "Artes/Cenarios/catedralsaopaulo.xp";
+
         public IReadOnlyList<AcaoLocal> Acoes { get; }
 
-        /// <summary>Quantas vezes o jogador já tocou o sino. É o estado que
-        /// justifica esta classe existir separada da LocalCidade genérica.</summary>
-        private int _vezesQueTocouOSino;
+        /// <summary>Quantas vezes o jogador já tocou o sino, e se o segredo já
+        /// saiu. Antes eram campos desta classe; foram pro GerenciadorJogo quando
+        /// o Save entrou, pra que todo o progresso da partida fique num lugar só e
+        /// possa ser gravado e restaurado junto. Ver Regras/SaveJogo.</summary>
+        private static int VezesQueTocouOSino
+        {
+            get => GerenciadorJogo.SinosTocados;
+            set => GerenciadorJogo.SinosTocados = value;
+        }
 
-        private bool _segredoJaRevelado;
+        private static bool SegredoJaRevelado
+        {
+            get => GerenciadorJogo.SegredoCatedralRevelado;
+            set => GerenciadorJogo.SegredoCatedralRevelado = value;
+        }
 
         public LocalCatedral()
         {
@@ -53,15 +66,15 @@ namespace SurvivorGame.Mapa
 
         private ResultadoAcao TocarSino(Personagem jogador)
         {
-            if (_segredoJaRevelado)
+            if (SegredoJaRevelado)
                 return new ResultadoAcao { Mensagem = "Os sinos já contaram o que tinham pra contar." };
 
-            _vezesQueTocouOSino++;
+            VezesQueTocouOSino++;
 
-            if (_vezesQueTocouOSino == 1)
+            if (VezesQueTocouOSino == 1)
                 return new ResultadoAcao { Mensagem = "Uma nota grave ecoa pela nave vazia. Só uma. Os outros dois sinos ficam quietos." };
 
-            if (_vezesQueTocouOSino == 2)
+            if (VezesQueTocouOSino == 2)
                 return new ResultadoAcao { Mensagem = "Dois sinos respondem dessa vez, quase juntos. Parece que falta um." };
 
             var cantil = new Consumivel("Cantil do Padre",
@@ -78,7 +91,7 @@ namespace SurvivorGame.Mapa
                     Mensagem = "Os três sinos tocam juntos! Atrás do altar tem um cantil escondido - mas sua mochila está cheia. Volte com espaço."
                 };
 
-            _segredoJaRevelado = true;
+            SegredoJaRevelado = true;
 
             return new ResultadoAcao
             {

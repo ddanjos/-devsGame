@@ -158,17 +158,17 @@ namespace SurvivorGame.UI
             // aqui, mesmo com Fome, Sede, Força e Defesa já existindo no
             // Personagem. Equipar uma arma ou armadura muda Força/Defesa na hora,
             // porque estes valores são lidos direto do personagem a cada redesenho.
-            Surface.Print(2, 1, "=== INVENTARIO DO SOBREVIVENTE ===", Color.Yellow, Color.Black);
-            Surface.Print(2, 2, $"NIvel {_jogador.Nivel}   HP: {_jogador.Vida}/{_jogador.VidaMaxima}", Color.LimeGreen, Color.Black);
-            Surface.Print(2, 3, $"Fome: {_jogador.Fome}   Sede: {_jogador.Sede}   Dano: {_jogador.DanoBase}   Forca: {_jogador.Forca}   Defesa: {_jogador.Defesa}", Color.White, Color.Black);
+            Surface.PrintTexto(2, 1, "=== INVENTARIO DO SOBREVIVENTE ===", Color.Yellow, Color.Black);
+            Surface.PrintTexto(2, 2, $"NIvel {_jogador.Nivel}   HP: {_jogador.Vida}/{_jogador.VidaMaxima}", Color.LimeGreen, Color.Black);
+            Surface.PrintTexto(2, 3, $"Fome: {_jogador.Fome}   Sede: {_jogador.Sede}   Dano: {_jogador.DanoBase}   Forca: {_jogador.Forca}   Defesa: {_jogador.Defesa}", Color.White, Color.Black);
 
             // Coluna Esquerda: Itens da Mochila
-            Surface.Print(2, 4, "--- Mochila ---", Color.Cyan, Color.Black);
+            Surface.PrintTexto(2, 4, "--- Mochila ---", Color.Cyan, Color.Black);
             var itens = _jogador.Inventario.Itens;
 
             if (itens.Count == 0)
             {
-                Surface.Print(2, 6, "(Mochila Vazia)", Color.Gray, Color.Black);
+                Surface.PrintTexto(2, 6, "(Mochila Vazia)", Color.Gray, Color.Black);
             }
             else
             {
@@ -179,32 +179,38 @@ namespace SurvivorGame.UI
                     Color cor = sel ? Color.Yellow : Color.White;
 
                     string equipadosStr = _jogador.Equipamentos.Contains(itens[i]) ? " [EQUIPADO]" : "";
-                    Surface.Print(2, 6 + i, $"{prefixo}{itens[i].Nome} x{itens[i].Quantidade}{equipadosStr}", cor, Color.Black);
+                    Surface.PrintTexto(2, 6 + i, $"{prefixo}{itens[i].Nome} x{itens[i].Quantidade}{equipadosStr}", cor, Color.Black);
                 }
             }
 
             // Coluna Direita: Equipamentos Atuais
-            Surface.Print(40, 4, "--- Equipados ---", Color.Cyan, Color.Black);
-            Surface.Print(40, 6, $"Arma: {_jogador.ArmaEquipada?.Nome ?? "Nenhuma"}", Color.White, Color.Black);
-            Surface.Print(40, 7, $"Armadura: {_jogador.ArmaduraEquipada?.Nome ?? "Nenhuma"}", Color.White, Color.Black);
+            Surface.PrintTexto(40, 4, "--- Equipados ---", Color.Cyan, Color.Black);
+            Surface.PrintTexto(40, 6, $"Arma: {_jogador.ArmaEquipada?.Nome ?? "Nenhuma"}", Color.White, Color.Black);
+            Surface.PrintTexto(40, 7, $"Armadura: {_jogador.ArmaduraEquipada?.Nome ?? "Nenhuma"}", Color.White, Color.Black);
 
             // Ícone do item selecionado (canto direito) - vem dos .xp que o colega
             // desenhou (Artes/Icones/), carregado via IconeUtils (Flyweight, igual
             // ao TileFactory).
             if (itens.Count > 0)
             {
-                ScreenSurface icone = IconeUtils.ObterIcone(itens[_indiceItem]);
-                int iconeX = Width - icone.Width - 3;
-                int iconeY = 4;
-                Surface.Print(iconeX, iconeY - 1, "Icone:", Color.Cyan, Color.Black);
-                icone.Surface.Copy(Surface, iconeX, iconeY);
+                // Pode vir null se o .xp do ícone não carregar - nesse caso a tela
+                // só não mostra ícone. Antes o null vinha disfarçado de objeto e
+                // apertar 'I' fechava o jogo com NullReferenceException.
+                ScreenSurface? icone = IconeUtils.ObterIcone(itens[_indiceItem]);
+                if (icone is not null)
+                {
+                    int iconeX = Width - icone.Width - 3;
+                    int iconeY = 4;
+                    Surface.PrintTexto(iconeX, iconeY - 1, "Icone:", Color.Cyan, Color.Black);
+                    PainelUi.DesenharPorCima(icone, Surface, iconeX, iconeY);
+                }
             }
 
             // Painel Inferior: Sub-Menu de Ações
             if (_modo == ModoInventario.SubMenuAcoes && itens.Count > 0)
             {
                 int yMenu = Height - 6;
-                Surface.Print(2, yMenu - 1, $"Opcoes para '{itens[_indiceItem].Nome}':", Color.Orange, Color.Black);
+                Surface.PrintTexto(2, yMenu - 1, $"Opcoes para '{itens[_indiceItem].Nome}':", Color.Orange, Color.Black);
 
                 for (int i = 0; i < _opcoesAcao.Length; i++)
                 {
@@ -212,11 +218,11 @@ namespace SurvivorGame.UI
                     string prefixo = sel ? "> " : "  ";
                     Color cor = sel ? Color.Yellow : Color.Gray;
 
-                    Surface.Print(2, yMenu + i, $"{prefixo}{_opcoesAcao[i]}", cor, Color.Black);
+                    Surface.PrintTexto(2, yMenu + i, $"{prefixo}{_opcoesAcao[i]}", cor, Color.Black);
                 }
             }
 
-            Surface.Print(2, Height - 1, "ESC ou 'I' para fechar | Enter para selecionar", Color.DarkGray, Color.Black);
+            Surface.PrintTexto(2, Height - 1, "ESC ou 'I' para fechar | Enter para selecionar", Color.DarkGray, Color.Black);
         }
     }
 }

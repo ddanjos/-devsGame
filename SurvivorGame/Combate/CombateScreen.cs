@@ -9,6 +9,7 @@ using SurvivorGame.Inventario;
 using SurvivorGame.Mapa;
 using SurvivorGame.Regras;
 using SurvivorGame.Utilitarios;
+using SurvivorGame.Audio;
 
 namespace SurvivorGame.Combate
 {
@@ -21,7 +22,17 @@ namespace SurvivorGame.Combate
 
         private readonly IScreenObject _telaAnterior;
         private readonly SessaoCombate _sessao;
-        private readonly ScreenSurface? _arteXP;
+        private ScreenSurface? _arteXP;
+
+        /// <summary>Plano de fundo da batalha (Lindomar, 25/08). Carregado uma vez
+        /// por combate; se o arquivo sumir, fica null e a tela desenha em preto
+        /// como antes - arte é enfeite, não pode derrubar o combate.</summary>
+        private readonly ScreenSurface? _fundo;
+
+        /// <summary>Faixas de texto: nome/HP do inimigo em cima, status e menu
+        /// embaixo. Ver Utilitarios/PainelUi.</summary>
+        private const int AlturaFaixaSuperior = 4;
+        private const int AlturaFaixaInferior = 12;
         private readonly InimigoNoMapa? _inimigoNoMapa;
         private readonly MapaInimigos? _mapaInimigos;
         private readonly Action? _aoSairDoCombate;
@@ -40,7 +51,7 @@ namespace SurvivorGame.Combate
 
         // Construtores e entrada do teclado
 
-        // Sobrecarga Principal: Recebe InimigoNoMapa e MapaInimigos para poder removê-lo
+                // Sobrecarga Principal: Recebe InimigoNoMapa e MapaInimigos para poder removê-lo
         public CombateScreen(Personagem jogador, InimigoNoMapa inimigoNoMapa, MapaInimigos mapaInimigos, IScreenObject telaAnterior, int largura, int altura, Action? aoSairDoCombate = null)
             : this(jogador, inimigoNoMapa.DadosCombate, telaAnterior, largura, altura, inimigoNoMapa.ArteXP)
         {
@@ -50,7 +61,7 @@ namespace SurvivorGame.Combate
         }
 
         public CombateScreen(Personagem jogador, Inimigo inimigo, IScreenObject telaAnterior, int largura, int altura, ScreenSurface? arteXP = null)
-            : base(largura, altura)
+    : base(largura, altura)
         {
             _telaAnterior = telaAnterior;
             _sessao = new SessaoCombate(jogador, inimigo);
@@ -80,31 +91,34 @@ namespace SurvivorGame.Combate
             else
             {
                 _arteXP = arteXP;
-                _sessao = new SessaoCombate(jogador, inimigo);
-
-                UseKeyboard = true;
-                IsFocused = true;
-
-                _sessao.IniciarTurnoJogador();
-
-
-                // O primeiro turno já consome Fome/Sede e pode matar por inanição.
-                // Sem esta checagem o combate começava com o jogador em 0 de vida e
-                // seguia normalmente, e o aviso de inanição era descartado em silêncio.
-                if (!string.IsNullOrEmpty(_sessao.AvisoDeEstado))
-                {
-                    MostrarMensagens(new[] { _sessao.AvisoDeEstado }, () =>
-                    {
-                        if (_sessao.VerificarResultado() != ResultadoCombate.EmAndamento)
-                            Finalizar(_sessao.VerificarResultado());
-                        else
-                            VoltarParaMenuPrincipal();
-                    });
-                    return;
-                }
-
-                Redesenhar();
             }
+
+            _fundo = ArteUtils.CarregarArteCenario("Artes/Cenarios/batalhafundo.xp");
+
+            GerenciadorSom.TocarTrilha(Trilha.Combate);
+
+            UseKeyboard = true;
+            IsFocused = true;
+
+            _sessao.IniciarTurnoJogador();
+
+
+            // O primeiro turno já consome Fome/Sede e pode matar por inanição.
+            // Sem esta checagem o combate começava com o jogador em 0 de vida e
+            // seguia normalmente, e o aviso de inanição era descartado em silêncio.
+            if (!string.IsNullOrEmpty(_sessao.AvisoDeEstado))
+            {
+                MostrarMensagens(new[] { _sessao.AvisoDeEstado }, () =>
+                {
+                    if (_sessao.VerificarResultado() != ResultadoCombate.EmAndamento)
+                        Finalizar(_sessao.VerificarResultado());
+                    else
+                        VoltarParaMenuPrincipal();
+                });
+                return;
+            }
+
+            Redesenhar();
         }
 
         public override bool ProcessKeyboard(Keyboard keyboard)
@@ -150,12 +164,12 @@ namespace SurvivorGame.Combate
                         if (_resultadoFinal == ResultadoCombate.Derrota)
                         {
                             Game.Instance.Screen = new Cenarios.FimDeJogoScreen(
-                                venceu: false, Cenarios.FimDeJogoScreen.TextoDerrota, Width, Height);
+                                venceu: false, Cenarios.FimDeJogoScreen.TextoDerrota,
+                                Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
                             Game.Instance.Screen.IsFocused = true;
                             return true;
                         }
 
-                        // Redesenha a tela do overworld para limpar o sprite do inimigo
                         _aoSairDoCombate?.Invoke();
                         Game.Instance.Screen = _telaAnterior;
                         Game.Instance.Screen!.IsFocused = true;
@@ -190,7 +204,7 @@ namespace SurvivorGame.Combate
                 confirmar();
             }
         }
-
+        // Logica de combate, Menus e renderizacao
         private void ConfirmarMenuPrincipal()
         {
             switch (_indiceSelecionado)
@@ -267,7 +281,13 @@ namespace SurvivorGame.Combate
 
         private void ExecutarAcaoDoJogador(Func<string> acao)
         {
+            int vidaAntes = _sessao.Jogador.Vida;
             string mensagemJogador = acao();
+
+            // O som do golpe do jogador sai aqui e não dentro da SessaoCombate: a
+            // sessão é a REGRA do combate e não deve conhecer áudio nenhum. Quem
+            // apresenta o combate é esta tela, e é ela quem faz barulho.
+            GerenciadorSom.Tocar(Efeito.Ataque);
 
             if (_sessao.VerificarResultado() != ResultadoCombate.EmAndamento)
             {
@@ -276,6 +296,11 @@ namespace SurvivorGame.Combate
             }
 
             string mensagemInimigo = _sessao.TurnoInimigo();
+
+            // Só toca o som de dor se o inimigo REALMENTE tirou vida - senão a ação
+            // nula dele (a piada à la Earthbound) soaria como uma pancada.
+            if (_sessao.Jogador.Vida < vidaAntes)
+                GerenciadorSom.Tocar(Efeito.DanoJogador);
 
             MostrarMensagens(new[] { mensagemJogador, mensagemInimigo }, () =>
             {
@@ -336,6 +361,13 @@ namespace SurvivorGame.Combate
         {
             _resultadoFinal = resultado;
 
+            GerenciadorSom.Tocar(resultado switch
+            {
+                ResultadoCombate.Vitoria => Efeito.InimigoMorre,
+                ResultadoCombate.Derrota => Efeito.Derrota,
+                _ => Efeito.MenuVoltar,
+            });
+
             // A recompensa de missão precisa valer pra QUALQUER vitória, não só
             // combate contra um inimigo que já estava desenhado no mapa
             // (_inimigoNoMapa) - antes disso ficava preso atrás do "is not null" e
@@ -369,15 +401,29 @@ namespace SurvivorGame.Combate
         {
             Surface.Clear();
 
-            Surface.Print(2, 2, _sessao.Inimigo.Nome, Color.OrangeRed, Color.Black);
-            Surface.Print(2, 3, $"HP: {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
+            // Ordem: cenário -> inimigo por cima dele -> faixas de texto por cima
+            // de tudo. O inimigo precisa do DesenharPorCima (e não do Copy) porque
+            // o fundo dele é transparente e o Copy abriria um buraco no cenário -
+            // ver Utilitarios/PainelUi.
+            if (_fundo is not null)
+                PainelUi.DesenharPorCima(_fundo, Surface, (Width / 2) - (_fundo.Width / 2), 0);
 
             if (_arteXP is not null)
             {
+                // Centralizado na area livre entre as duas faixas - os sprites tem
+                // alturas bem diferentes (o rato tem 14 linhas, o enxame tem 35) e
+                // ancorar todos no topo deixava os menores flutuando.
+                int alturaCena = Height - AlturaFaixaSuperior - AlturaFaixaInferior;
                 int posX = (Width / 2) - (_arteXP.Width / 2);
-                int posY = 4;
-                _arteXP.Surface.Copy(this.Surface, posX, posY);
+                int posY = AlturaFaixaSuperior + System.Math.Max(0, (alturaCena - _arteXP.Height) / 2);
+                PainelUi.DesenharPorCima(_arteXP, Surface, posX, posY);
             }
+
+            PainelUi.DesenharFaixaSuperior(Surface, AlturaFaixaSuperior);
+            PainelUi.DesenharFaixa(Surface, AlturaFaixaInferior);
+
+            Surface.PrintTexto(2, 1, _sessao.Inimigo.Nome, Color.OrangeRed, Color.Black);
+            Surface.PrintTexto(2, 2, $"HP: {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
 
             switch (_fase)
             {
@@ -392,7 +438,7 @@ namespace SurvivorGame.Combate
                         .Select(h => h.CustoEnergia > 0 ? $"{h.Nome} ({h.CustoEnergia} energia)" : h.Nome)
                         .ToArray();
                     DesenharMenu(nomesHabilidades, Height - 7);
-                    Surface.Print(2, Height - 1, "ESC para voltar", Color.Gray, Color.Black);
+                    Surface.PrintTexto(2, Height - 1, "ESC para voltar", Color.Gray, Color.Black);
                     break;
 
                 case Fase.MenuItens:
@@ -401,55 +447,73 @@ namespace SurvivorGame.Combate
                         ? _itensDisponiveis.Select(i => $"{i.Nome} x{i.Quantidade} (cura {i.Cura})").ToArray()
                         : new[] { "(nenhum item disponível)" };
                     DesenharMenu(nomesItens, Height - 7);
-                    Surface.Print(2, Height - 1, "ESC para voltar", Color.Gray, Color.Black);
+                    Surface.PrintTexto(2, Height - 1, "ESC para voltar", Color.Gray, Color.Black);
                     break;
 
                 case Fase.VendoStatus:
-                    Surface.Print(2, 5, $"Rodada {_sessao.Rodada}  |  Iniciativa: {_sessao.Iniciativa}", Color.Cyan, Color.Black);
-                    Surface.Print(2, 6, $"{_sessao.Inimigo.Nome} - HP {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
-                    Surface.Print(2, 7, $"   Forca: {_sessao.Inimigo.Forca}   Defesa: {_sessao.Inimigo.Defesa}", Color.Gray, Color.Black);
-                    Surface.Print(2, 9, $"{_sessao.Jogador.Nome} - HP {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}", Color.White, Color.Black);
-                    Surface.Print(2, 10, $"   Forca: {_sessao.Jogador.Forca}   Defesa: {_sessao.Jogador.Defesa}", Color.Gray, Color.Black);
-                    Surface.Print(2, 11, $"Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.Cyan, Color.Black);
-                    Surface.Print(2, Height - 1, "Pressione qualquer tecla para voltar (seu turno continua)", Color.Gray, Color.Black);
+                    // Ficha completa: precisa da tela limpa, senao o texto sai por
+                    // cima do cenario e do sprite. Antes da arte entrar o fundo ja
+                    // era preto e isso nao fazia falta.
+                    Surface.Clear();
+                    PainelUi.DesenharFaixaSuperior(Surface, 13);
+                    Surface.PrintTexto(2, 1, "FICHA DO COMBATE", Color.Gold, Color.Black);
+                    Surface.PrintTexto(2, 5, $"Rodada {_sessao.Rodada}  |  Iniciativa: {_sessao.Iniciativa}", Color.Cyan, Color.Black);
+                    Surface.PrintTexto(2, 6, $"{_sessao.Inimigo.Nome} - HP {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
+                    Surface.PrintTexto(2, 7, $"   Forca: {_sessao.Inimigo.Forca}   Defesa: {_sessao.Inimigo.Defesa}", Color.Gray, Color.Black);
+                    Surface.PrintTexto(2, 9, $"{_sessao.Jogador.Nome} - HP {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}", Color.White, Color.Black);
+                    Surface.PrintTexto(2, 10, $"   Forca: {_sessao.Jogador.Forca}   Defesa: {_sessao.Jogador.Defesa}", Color.Gray, Color.Black);
+                    Surface.PrintTexto(2, 11, $"Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.Cyan, Color.Black);
+                    Surface.PrintTexto(2, Height - 1, "Pressione qualquer tecla para voltar (seu turno continua)", Color.Gray, Color.Black);
                     break;
 
                 case Fase.Mensagem:
                     DesenharStatusJogador();
                     if (_filaMensagens.Count > 0)
-                        Surface.Print(2, Height - 6, _filaMensagens.Peek(), Color.Yellow, Color.Black);
-                    Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black);
-                    break;
-
-                case Fase.FimDeCombate:
-                    string textoFinal = _resultadoFinal switch
-                    {
-                        ResultadoCombate.Vitoria => $"Você derrotou {_sessao.Inimigo.Nome}!{_mensagemRecompensa}",
-                        ResultadoCombate.Derrota => $"{_sessao.Jogador.Nome} foi derrotado...",
-                        ResultadoCombate.Fugiu => "Você fugiu da batalha.",
-                        _ => ""
-                    };
-                    Surface.Print(2, Height / 2, textoFinal, Color.White, Color.Black);
-                    Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black);
-                    break;
+                        ImprimirQuebrando(_filaMensagens.Peek(), Height - 6, Color.Yellow);
+                    Surface.PrintTexto(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black); break;
+                case Fase.FimDeCombate: string textoFinal = _resultadoFinal switch { ResultadoCombate.Vitoria => $"Você derrotou {_sessao.Inimigo.Nome}!{_mensagemRecompensa}", ResultadoCombate.Derrota => $"{_sessao.Jogador.Nome} foi derrotado...", ResultadoCombate.Fugiu => "Você fugiu da batalha.", _ => "" }; ImprimirQuebrando(textoFinal, Height - 8, Color.White); Surface.PrintTexto(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black); break;
             }
         }
-
-        private void DesenharStatusJogador()
+        /// <summary>
+        /// Imprime quebrando em linhas. O Print do SadConsole escreve num buffer
+        /// plano: texto maior que a largura da tela transborda pra linha de baixo,
+        /// começando na coluna 0. A fala mais longa de inimigo tem 100 caracteres e
+        /// a mensagem de vitória com a recompensa chega a 109 - as duas vazavam.
+        /// A primeira linha fica em 'linha'; as seguintes descem.
+        /// </summary>
+        private void ImprimirQuebrando(string texto, int linha, Color cor)
         {
-            int y = Height - 10;
-            Surface.Print(2, y, $"{_sessao.Jogador.Nome}   Rodada {_sessao.Rodada}   Iniciativa: {_sessao.Iniciativa}", Color.LimeGreen, Color.Black);
-            Surface.Print(2, y + 1, $"HP: {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}   Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.White, Color.Black);
+            if (string.IsNullOrEmpty(texto)) return;
+
+            var atual = new System.Text.StringBuilder();
+            int y = linha;
+
+            foreach (string palavra in texto.Split(' '))
+            {
+                if (atual.Length + palavra.Length + 1 > Width - 4)
+                {
+                    if (y < Height - 1) Surface.PrintTexto(2, y, atual.ToString(), cor, Color.Black);
+                    atual.Clear();
+                    y++;
+                }
+
+                if (atual.Length > 0) atual.Append(' ');
+                atual.Append(palavra);
+            }
+
+            if (atual.Length > 0 && y < Height - 1)
+                Surface.PrintTexto(2, y, atual.ToString(), cor, Color.Black);
         }
 
-        private void DesenharMenu(IReadOnlyList<string> opcoes, int yInicial)
+        private void DesenharStatusJogador() { int y = Height - 10; Surface.PrintTexto(2, y, $"{_sessao.Jogador.Nome}   Rodada {_sessao.Rodada}   Iniciativa: {_sessao.Iniciativa}", Color.LimeGreen, Color.Black); Surface.PrintTexto(2, y + 1, $"HP: {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}   Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.White, Color.Black); }
+        private void DesenharMenu(System.Collections.Generic.IReadOnlyList<string> opcoes, int yInicial)
         {
             for (int i = 0; i < opcoes.Count; i++)
             {
                 bool selecionado = i == _indiceSelecionado;
                 string prefixo = selecionado ? "> " : "  ";
                 Color cor = selecionado ? Color.Yellow : Color.White;
-                Surface.Print(2, yInicial + i, prefixo + opcoes[i], cor, Color.Black);
+                Surface.PrintTexto(2, yInicial + i, prefixo + opcoes[i], cor, Color.Black);
             }
         }
 

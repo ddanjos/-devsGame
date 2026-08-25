@@ -1,4 +1,4 @@
-using SadConsole;
+﻿using SadConsole;
 using SadConsole.Input;
 using SadRogue.Primitives;
 using SurvivorGame.Mapa;
@@ -222,7 +222,7 @@ namespace SurvivorGame.Cenarios
                 int posX = System.Math.Max(0, (Width / 2) - (_arteIntroducao.Width / 2));
                 int posY = System.Math.Max(0, (Height / 2) - (_arteIntroducao.Height / 2));
                 _arteIntroducao.Surface.Copy(Surface, posX, posY);
-                Surface.Print(2, Height - 1, "Pressione qualquer tecla para entrar...", Color.Gray, Color.Black);
+                Surface.PrintTexto(2, Height - 1, "Pressione qualquer tecla para entrar...", Color.Gray, Color.Black);
                 return;
             }
 
@@ -241,7 +241,7 @@ namespace SurvivorGame.Cenarios
 
             Surface.SetGlyph(_posicao.X, _posicao.Y, '@', Color.LimeGreen, Color.Black);
 
-            Surface.Print(2, Height - 1, "Setas/WASD para mover | E para interagir | ESC para voltar", Color.Gray, Color.Black);
+            Surface.PrintTexto(2, Height - 1, "Setas/WASD para mover | E para interagir | ESC para voltar", Color.Gray, Color.Black);
 
             // Perto de um ponto de interesse (elevador, escada, saída...)? Esse
             // prompt tem prioridade sobre a mensagem comum (dica inicial ou aviso
@@ -258,7 +258,7 @@ namespace SurvivorGame.Cenarios
                 List<string> linhas = QuebrarLinhas(textoMensagem, Width - 4).ToList();
                 int linhaInicial = Height - 1 - linhas.Count;
                 for (int i = 0; i < linhas.Count; i++)
-                    Surface.Print(2, linhaInicial + i, linhas[i], Color.Yellow, Color.Black);
+                    Surface.PrintTexto(2, linhaInicial + i, linhas[i], Color.Yellow, Color.Black);
             }
         }
 

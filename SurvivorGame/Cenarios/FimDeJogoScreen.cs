@@ -1,9 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using SadConsole;
 using SadConsole.Input;
 using SadRogue.Primitives;
+using SurvivorGame.Utilitarios;
+using SurvivorGame.Audio;
 
 namespace SurvivorGame.Cenarios
 {
@@ -13,9 +15,14 @@ namespace SurvivorGame.Cenarios
     /// voltava pro mapa com a vida zerada, e a condição de vitória
     /// (GerenciadorJogo.PodeTransmitir) nunca era consultada em lugar nenhum.
     ///
-    /// Fecha o jogo ao apertar uma tecla. Um "voltar ao menu principal" seria
-    /// melhor, mas menu principal ainda não existe (SCRUM-8, em andamento) - quando
-    /// existir, é aqui que ele entra.
+    /// Volta pro MENU PRINCIPAL ao apertar uma tecla. Antes chamava
+    /// Environment.Exit(0), porque o menu ainda não existia (SCRUM-8); agora existe,
+    /// então fechar a janela na cara do jogador virou bug - inclusive no melhor
+    /// momento do jogo, que é a tela de vitória.
+    ///
+    /// A tecla que ABRIU esta tela é ignorada de propósito: o SadConsole repete
+    /// tecla segurada (~25x por segundo depois de 0,8s), então "pressione qualquer
+    /// tecla" disparava sozinho e o texto do final sumia antes de ser lido.
     /// </summary>
     internal class FimDeJogoScreen : ScreenSurface
     {
@@ -34,10 +41,24 @@ namespace SurvivorGame.Cenarios
             Desenhar();
         }
 
+        /// <summary>Vira true no primeiro frame em que NENHUMA tecla está
+        /// pressionada. Até lá, ignoramos o teclado - é o que impede a tecla ainda
+        /// segurada do combate ou da ação anterior de pular esta tela.</summary>
+        private bool _tecladoLiberado;
+
         public override bool ProcessKeyboard(Keyboard keyboard)
         {
+            if (!_tecladoLiberado)
+            {
+                if (keyboard.KeysDown.Count == 0) _tecladoLiberado = true;
+                return true;
+            }
+
             if (keyboard.KeysPressed.Count > 0)
-                Environment.Exit(0);
+            {
+                GerenciadorSom.TocarTrilha(Trilha.Exploracao);
+                Program.MostrarMenuPrincipal();
+            }
 
             return true;
         }
@@ -50,16 +71,16 @@ namespace SurvivorGame.Cenarios
             Color corTitulo = _venceu ? Color.Gold : Color.IndianRed;
 
             int y = Height / 2 - 6;
-            Surface.Print(Math.Max(2, (Width - titulo.Length) / 2), y, titulo, corTitulo, Color.Black);
+            Surface.PrintTexto(Math.Max(2, (Width - titulo.Length) / 2), y, titulo, corTitulo, Color.Black);
 
             y += 3;
             foreach (string linha in QuebrarLinhas(_detalhe, Width - 8))
             {
-                Surface.Print(4, y, linha, Color.White, Color.Black);
+                Surface.PrintTexto(4, y, linha, Color.White, Color.Black);
                 y++;
             }
 
-            Surface.Print(2, Height - 2, "Pressione qualquer tecla para sair.", Color.Gray, Color.Black);
+            Surface.PrintTexto(2, Height - 2, "Pressione qualquer tecla para voltar ao menu.", Color.Gray, Color.Black);
         }
 
         private static IEnumerable<string> QuebrarLinhas(string texto, int larguraMaxima)

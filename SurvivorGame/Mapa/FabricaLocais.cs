@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using SurvivorGame.Combate;
 using SurvivorGame.Inventario;
@@ -88,7 +88,7 @@ namespace SurvivorGame.Mapa
 
                     return new ResultadoAcao
                     {
-                        Mensagem = $"Um estalo azul salta do painel e queima sua mão (-8 de vida) - mas você consegue arrancar o Fusível industrial inteiro! [PEÇA {GerenciadorJogo.PecasEncontradas}/3]"
+                        Mensagem = $"Um estalo azul salta do painel e queima sua mão (-8 de vida) - mas você consegue arrancar o Fusível industrial inteiro! [PEÇA {GerenciadorJogo.PecasEncontradas}/3]{GerenciadorJogo.AvisoDeFinal()}"
                     };
                 }),
 
@@ -111,7 +111,8 @@ namespace SurvivorGame.Mapa
                 }),
 
                 VoltarPraRua(),
-            });
+            },
+            "Artes/Cenarios/prefeitura.xp");
 
         /// <summary>Museu Hering - guarda a BATERIA, protegida pelo Vira-Lata Alfa.
         /// O mais difícil das três peças, de propósito.</summary>
@@ -132,7 +133,6 @@ namespace SurvivorGame.Mapa
                         Mensagem = "Um vira-lata enorme se levanta de cima dos fardos, rosnando. Ele não vai deixar você chegar perto da bateria.",
                         IniciarCombateCom = FabricaInimigos.CriarViraLataAlfa(),
                         ArteInimigo = FabricaInimigos.CarregarArteCaoAlfa()
-
                     };
                 }),
 
@@ -150,7 +150,8 @@ namespace SurvivorGame.Mapa
                 }),
 
                 VoltarPraRua(),
-            });
+            },
+            "Artes/Cenarios/museuhering.xp");
 
         // ------------------------------------------------------------------
         // COMBATE
@@ -170,7 +171,7 @@ namespace SurvivorGame.Mapa
                     {
                         Mensagem = "Um homem magro sai de trás de uma prateleira com um cano na mão. \"Esse aqui é meu\", ele diz.",
                         IniciarCombateCom = FabricaInimigos.CriarSaqueador(),
-                        ArteInimigo= FabricaInimigos.CarregarArteSaqueador()
+                        ArteInimigo = FabricaInimigos.CarregarArteSaqueador()
                     }),
 
                 new AcaoLocal("Chamar e tentar conversar", custoFome: 3, custoSede: 3, jogador =>
@@ -189,7 +190,8 @@ namespace SurvivorGame.Mapa
                 }),
 
                 VoltarPraRua(),
-            });
+            },
+            "Artes/Cenarios/castelinho.xp");
 
         /// <summary>Parque São Francisco - primeiro combate "de verdade" fora da
         /// ProWay, com o inimigo mais simples do roster.</summary>
@@ -224,7 +226,8 @@ namespace SurvivorGame.Mapa
                 }),
 
                 VoltarPraRua(),
-            });
+            },
+            "Artes/Cenarios/parquesaofrancisco.xp");
 
         // ------------------------------------------------------------------
         // DESCANSO
@@ -253,7 +256,8 @@ namespace SurvivorGame.Mapa
                 }),
 
                 VoltarPraRua(),
-            });
+            },
+            "Artes/Cenarios/parqueramiroruediger.xp");
 
         // ------------------------------------------------------------------
         // DESCOBERTA / LORE
@@ -282,13 +286,11 @@ namespace SurvivorGame.Mapa
                     }),
 
                 VoltarPraRua(),
-            });
+            },
+            "Artes/Cenarios/museucerveja.xp");
 
         /// <summary>Museu de Hábitos e Costumes - descoberta garantida, sem sorteio.
-        /// Dá previsibilidade num jogo cheio de aleatoriedade. Também é, de
-        /// propósito, um local SEM inimigo nenhum - por isso guarda o Podão
-        /// Enferrujado (dano 20, acima do Cano de Ferro do porão da ProWay):
-        /// equipamento bom que se ganha por explorar, não só por vencer luta.</summary>
+        /// Dá previsibilidade num jogo cheio de aleatoriedade.</summary>
         private static ILocalExploravel CriarMuseuHabitos() => new LocalCidade(
             "Museu de Hábitos e Costumes",
             "Vitrines com objetos do dia a dia de gente que morreu há mais de um século - " +
@@ -309,21 +311,9 @@ namespace SurvivorGame.Mapa
                     };
                 }),
 
-                new AcaoLocal("Vasculhar o expositor de ferramentas antigas", custoFome: 4, custoSede: 4, jogador =>
-                {
-                    var podao = new Arma("Podão Enferrujado",
-                        "Ferramenta de jardinagem, pesada e enferrujada, mas ainda corta.", 1, dano: 20, simbolo: '/');
-                    bool coletou = jogador.Inventario.AdicionarItem(podao);
-                    return new ResultadoAcao
-                    {
-                        Mensagem = coletou
-                            ? "Atrás do vidro quebrado, entre foices e podões de exposição, um deles ainda está inteiro o bastante pra usar. (Equipe pelo inventário!)"
-                            : "Tem um podão inteiro aqui, mas sua mochila está cheia."
-                    };
-                }),
-
                 VoltarPraRua(),
-            });
+            },
+            "Artes/Cenarios/museucostumes.xp");
 
         /// <summary>Museu da Família Colonial - puro lore sobre o Evento. Sem custo:
         /// é leitura, não esforço físico.</summary>
@@ -341,7 +331,8 @@ namespace SurvivorGame.Mapa
                     }),
 
                 VoltarPraRua(),
-            });
+            },
+            "Artes/Cenarios/museufamilia.xp");
 
         /// <summary>Mausoléu - tensão social sem combate: planta a ideia de que
         /// existem outros sobreviventes, sem nunca mostrar nenhum.</summary>
@@ -359,6 +350,7 @@ namespace SurvivorGame.Mapa
                     }),
 
                 VoltarPraRua(),
-            });
+            },
+            "Artes/Cenarios/mausoleu.xp");
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using SadConsole;
 using SadConsole.Input;
 using SadRogue.Primitives;
+using SurvivorGame.Audio;
 using SurvivorGame.Utilitarios;
 
 namespace SurvivorGame.Ui
@@ -84,12 +85,17 @@ namespace SurvivorGame.Ui
         {
             if (Opcoes.Count == 0) return true;
 
-            if (keyboard.IsKeyPressed(Keys.Down)) { Mover(1); return true; }
-            if (keyboard.IsKeyPressed(Keys.Up)) { Mover(-1); return true; }
+            if (keyboard.IsKeyPressed(Keys.Down)) { GerenciadorSom.Tocar(Efeito.MenuMover); Mover(1); return true; }
+            if (keyboard.IsKeyPressed(Keys.Up)) { GerenciadorSom.Tocar(Efeito.MenuMover); Mover(-1); return true; }
 
             if (keyboard.IsKeyPressed(Keys.Enter))
             {
                 ItemDeMenu escolhida = Opcoes[_indice];
+
+                // O som sai daqui, na classe base: qualquer menu do jogo - principal,
+                // pause, opções - ganha o retorno sonoro sem escrever uma linha.
+                GerenciadorSom.Tocar(escolhida.Habilitado ? Efeito.MenuConfirmar : Efeito.Erro);
+
                 if (escolhida.Habilitado) escolhida.Executar();
                 return true;
             }

@@ -42,6 +42,11 @@ namespace SurvivorGame.Ui
                 new("Continuar jogando", Voltar),
                 new("Salvar jogo", () => Salvar()),
                 new("Salvar e sair para o menu", SalvarESair),
+                new("Opcoes (som)", () =>
+                {
+                    Game.Instance.Screen = new OpcoesScreen(this, Width, Height);
+                    Game.Instance.Screen.IsFocused = true;
+                }),
                 new("Sair para o menu (sem salvar)", Program.MostrarMenuPrincipal),
             };
 

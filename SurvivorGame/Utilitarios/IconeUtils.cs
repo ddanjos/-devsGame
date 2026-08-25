@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using SadConsole;
 using SurvivorGame.Inventario;
 
@@ -12,9 +12,15 @@ namespace SurvivorGame.Utilitarios
     /// </summary>
     internal static class IconeUtils
     {
-        private static readonly Dictionary<string, ScreenSurface> _cache = new();
+        private static readonly Dictionary<string, ScreenSurface?> _cache = new();
 
-        public static ScreenSurface ObterIcone(ItemInventario item)
+        /// <summary>Devolve o ícone do item, ou NULL se o .xp dele não puder ser
+        /// carregado. Nullable de propósito: quando o ArteUtils passou a devolver
+        /// null em vez de lançar exceção, este cache guardava o null e o entregava
+        /// como se fosse um objeto - e a tela de inventário estourava
+        /// NullReferenceException ao ler icone.Width, fechando o jogo na tecla 'I'.
+        /// Agora o tipo diz a verdade e quem chama é obrigado a tratar.</summary>
+        public static ScreenSurface? ObterIcone(ItemInventario item)
         {
             string caminho = item switch
             {
@@ -27,6 +33,9 @@ namespace SurvivorGame.Utilitarios
             if (!_cache.TryGetValue(caminho, out ScreenSurface? icone))
             {
                 icone = ArteUtils.CarregarArteCenario(caminho);
+
+                // Guarda até o null: assim um arquivo faltando é tentado uma vez
+                // só, e não a cada redesenho da tela.
                 _cache[caminho] = icone;
             }
 

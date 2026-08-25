@@ -1,4 +1,4 @@
-using SadConsole;
+﻿using SadConsole;
 using SurvivorGame.Inventario;
 using SurvivorGame.Utilitarios;
 
@@ -96,19 +96,23 @@ namespace SurvivorGame.Combate
                     ehAcaoNula: true),
             });
 
-        /// <summary>Arte .xp do rato (único inimigo com arte pronta no projeto).
-        /// Os outros ainda não têm - o CombateScreen aceita arte nula e só mostra
-        /// nome + HP, então eles funcionam normal até alguém desenhar.</summary>
+        /// <summary>Artes .xp dos inimigos, desenhadas pelo Lindomar no REXPaint.
+        /// Ficam aqui (e não dentro do Inimigo) porque a arte é dado de
+        /// APRESENTAÇÃO, não de regra: o mesmo inimigo pode aparecer sem arte
+        /// numa tela de teste. Quem passa a arte pro combate é a ação do local,
+        /// via ResultadoAcao.ArteInimigo - ver Mapa/FabricaLocais.
+        ///
+        /// O CombateScreen aceita arte nula e mostra só nome + HP, então um
+        /// inimigo novo funciona antes de alguém desenhar.</summary>
         public static ScreenSurface CarregarArteRato() =>
             ArteUtils.CarregarArteInimigo("Artes/Inimigos/ratoselvagem.xp");
         public static ScreenSurface CarregarArteCao() =>
-            ArteUtils.CarregarArteInimigo("Artes/Inimigos/caoassilvestrado.xp");
+            ArteUtils.CarregarArteInimigo("Artes/Inimigos/CaoAssilvestrado.xp");
         public static ScreenSurface CarregarArteCaoAlfa() =>
             ArteUtils.CarregarArteInimigo("Artes/Inimigos/ViraLataAlfa.xp");
         public static ScreenSurface CarregarArteSaqueador() =>
             ArteUtils.CarregarArteInimigo("Artes/Inimigos/saqueador.xp");
         public static ScreenSurface CarregarArteEnxame() =>
             ArteUtils.CarregarArteInimigo("Artes/Inimigos/enxamedemosquitos.xp");
-        //teste
     }
 }

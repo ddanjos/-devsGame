@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SadConsole;
@@ -8,6 +8,7 @@ using SurvivorGame.Combate;
 using SurvivorGame.Mapa;
 using SurvivorGame.UI;
 using SurvivorGame.Utilitarios;
+using SurvivorGame.Audio;
 
 namespace SurvivorGame.Cenarios
 {
@@ -75,6 +76,10 @@ namespace SurvivorGame.Cenarios
             base.OnFocused();
 
             if (_local is null) return;
+
+            // Voltando do combate ou do inventário: a música volta a ser a de
+            // exploração. TocarTrilha ignora o pedido se ela já estiver tocando.
+            GerenciadorSom.TocarTrilha(Trilha.Exploracao);
             Redesenhar();
         }
 
@@ -82,7 +87,7 @@ namespace SurvivorGame.Cenarios
         {
             if (keyboard.IsKeyPressed(Keys.I))
             {
-                Game.Instance.Screen = new InventarioScreen(_jogador, this, Width, Height);
+                Game.Instance.Screen = new InventarioScreen(_jogador, this, Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
                 Game.Instance.Screen.IsFocused = true;
                 return true;
             }
@@ -94,22 +99,30 @@ namespace SurvivorGame.Cenarios
                 return true;
             }
 
-            IReadOnlyList<AcaoLocal> acoes = _local.Acoes;
-            if (acoes.Count == 0)
+            // Navega só entre as ações que REALMENTE cabem na tela. Sem isso o
+            // jogador podia selecionar e executar uma ação invisível, caso um local
+            // passasse de 5 ações (ver o comentário do layout em Redesenhar).
+            int quantidade = AcoesVisiveis;
+            if (quantidade == 0)
                 return true;
+
+            IReadOnlyList<AcaoLocal> acoes = _local.Acoes;
 
             if (keyboard.IsKeyPressed(Keys.Down))
             {
-                _indiceSelecionado = (_indiceSelecionado + 1) % acoes.Count;
+                GerenciadorSom.Tocar(Efeito.MenuMover);
+                _indiceSelecionado = (_indiceSelecionado + 1) % quantidade;
                 Redesenhar();
             }
             else if (keyboard.IsKeyPressed(Keys.Up))
             {
-                _indiceSelecionado = (_indiceSelecionado - 1 + acoes.Count) % acoes.Count;
+                GerenciadorSom.Tocar(Efeito.MenuMover);
+                _indiceSelecionado = (_indiceSelecionado - 1 + quantidade) % quantidade;
                 Redesenhar();
             }
             else if (keyboard.IsKeyPressed(Keys.Enter))
             {
+                GerenciadorSom.Tocar(Efeito.MenuConfirmar);
                 ExecutarAcaoSelecionada(acoes[_indiceSelecionado]);
             }
 
@@ -129,10 +142,23 @@ namespace SurvivorGame.Cenarios
             ResultadoAcao resultado = acao.Executar(_jogador);
             _mensagem = resultado.Mensagem ?? string.Empty;
 
+            // Uma peça do rádio merece um som próprio - é o marco de progresso da
+            // missão. A mensagem é a única fonte de verdade disponível aqui, e é
+            // ela mesma que o jogador lê ("[PEÇA 2/3]").
+            if (_mensagem.Contains("PEÇA") || _mensagem.Contains("PECA"))
+                GerenciadorSom.Tocar(Efeito.Peca);
+            else if (_mensagem.Contains("Você") && resultado.IniciarCombateCom is null
+                     && !string.IsNullOrEmpty(_mensagem))
+                GerenciadorSom.Tocar(Efeito.Item);
+
             if (resultado.VenceuOJogo)
             {
+                GerenciadorSom.PararTrilha();
+                GerenciadorSom.Tocar(Efeito.Vitoria);
+
                 Game.Instance.Screen = new FimDeJogoScreen(
-                    venceu: true, FimDeJogoScreen.TextoVitoria, Width, Height);
+                    venceu: true, FimDeJogoScreen.TextoVitoria,
+                    Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
                 Game.Instance.Screen.IsFocused = true;
                 return;
             }
@@ -144,8 +170,12 @@ namespace SurvivorGame.Cenarios
             string aviso = AplicarDesgaste();
             if (_jogador.Estado == EstadoPersonagem.Morto)
             {
+                GerenciadorSom.PararTrilha();
+                GerenciadorSom.Tocar(Efeito.Derrota);
+
                 Game.Instance.Screen = new FimDeJogoScreen(
-                    venceu: false, FimDeJogoScreen.TextoDerrotaInanicao, Width, Height);
+                    venceu: false, FimDeJogoScreen.TextoDerrotaInanicao,
+                    Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
                 Game.Instance.Screen.IsFocused = true;
                 return;
             }
@@ -214,33 +244,65 @@ namespace SurvivorGame.Cenarios
             Redesenhar();
         }
 
+        /// <summary>Altura da faixa preta de baixo, onde vão nome, descrição,
+        /// status e ações. Ver DesenharPainel.</summary>
+        private const int AlturaDoPainel = 16;
+
+        /// <summary>Primeira das duas linhas reservadas pra mensagem, logo acima do
+        /// rodapé de controles. As ações são ancoradas em cima disso.</summary>
+        private int LinhaDaMensagem => Height - 3;
+
+        /// <summary>Primeira linha da lista de ações. Fixa, pra que o HP logo acima
+        /// (Height - 9) nunca seja apagado.</summary>
+        private int LinhaDasAcoes => Height - 8;
+
+        /// <summary>Quantas ações cabem de fato entre a lista e a mensagem. Hoje 5,
+        /// que é exatamente o máximo que existe (Escritório da ProWay com as três
+        /// peças). Serve pra navegação e desenho concordarem: uma ação que não é
+        /// desenhada também não pode ser selecionada.</summary>
+        private int AcoesVisiveis =>
+            System.Math.Min(_local.Acoes.Count, System.Math.Max(0, LinhaDaMensagem - LinhaDasAcoes));
+
         private void Redesenhar()
         {
             Surface.Clear();
 
-            int linha = 1;
-
             if (_arteAtual is not null)
             {
                 int posX = System.Math.Max(0, (Width / 2) - (_arteAtual.Width / 2));
-                _arteAtual.Surface.Copy(Surface, posX, linha);
+                PainelUi.DesenharPorCima(_arteAtual, Surface, posX, 0);
             }
 
-            Surface.Print(2, Height - 15, _local.Nome, Color.Gold, Color.Black);
+            PainelUi.DesenharFaixa(Surface, AlturaDoPainel);
+
+            Surface.PrintTexto(2, Height - 15, _local.Nome, Color.Gold, Color.Black);
 
             int linhaDescricao = Height - 13;
             foreach (string trecho in QuebrarLinhas(_local.Descricao, Width - 4))
             {
-                Surface.Print(2, linhaDescricao, trecho, Color.White, Color.Black);
+                Surface.PrintTexto(2, linhaDescricao, trecho, Color.White, Color.Black);
                 linhaDescricao++;
             }
 
-            Surface.Print(2, Height - 9,
+            Surface.PrintTexto(2, Height - 9,
                 $"HP: {_jogador.Vida}/{_jogador.VidaMaxima}   Fome: {_jogador.Fome}   Sede: {_jogador.Sede}",
                 Color.LightGreen, Color.Black);
 
+            // Layout de baixo pra cima: rodapé na última linha, DUAS linhas
+            // reservadas pra mensagem, e as ações ancoradas logo acima disso.
+            // Antes as ações começavam numa linha fixa (Height - 7) e a mensagem
+            // pegava o que sobrasse - no Escritório da ProWay com as 3 peças são 5
+            // ações e sobrava uma linha só, então o aviso de dano por fome era
+            // cortado no meio. Ancorando embaixo, a mensagem sempre tem suas duas.
+            // A zona das ações é fixa: da linha Height-8 até a linha antes da
+            // mensagem. Cabem 5, que é o máximo que existe hoje (o Escritório da
+            // ProWay com as 3 peças). Uma 6ª ação seria CORTADA, não desenhada por
+            // cima do HP - deixar o bloco subir apagaria a linha de HP em silêncio,
+            // que é o tipo de bug que ninguém percebe até a apresentação. Se algum
+            // dia um local precisar de mais, o certo é dar scroll a esta lista.
             IReadOnlyList<AcaoLocal> acoes = _local.Acoes;
-            for (int i = 0; i < acoes.Count; i++)
+
+            for (int i = 0; i < AcoesVisiveis; i++)
             {
                 bool selecionado = i == _indiceSelecionado;
                 string prefixo = selecionado ? "> " : "  ";
@@ -248,7 +310,7 @@ namespace SurvivorGame.Cenarios
                 string custo = acoes[i].CustoFome > 0 || acoes[i].CustoSede > 0
                     ? $" (Fome -{acoes[i].CustoFome}, Sede -{acoes[i].CustoSede})"
                     : string.Empty;
-                Surface.Print(2, Height - 7 + i, prefixo + acoes[i].Texto + custo, cor, Color.Black);
+                Surface.PrintTexto(2, LinhaDasAcoes + i, prefixo + acoes[i].Texto + custo, cor, Color.Black);
             }
 
             // A mensagem PRECISA ser quebrada em linhas: o Print do SadConsole
@@ -259,12 +321,12 @@ namespace SurvivorGame.Cenarios
             if (!string.IsNullOrEmpty(_mensagem))
             {
                 List<string> linhas = QuebrarLinhas(_mensagem, Width - 4).ToList();
-                int linhaInicial = Height - 1 - linhas.Count;
-                for (int i = 0; i < linhas.Count; i++)
-                    Surface.Print(2, linhaInicial + i, linhas[i], Color.Cyan, Color.Black);
+
+                for (int i = 0; i < linhas.Count && LinhaDaMensagem + i < Height - 1; i++)
+                    Surface.PrintTexto(2, LinhaDaMensagem + i, linhas[i], Color.Cyan, Color.Black);
             }
 
-            Surface.Print(2, Height - 1, "Setas + Enter para escolher | I para inventário | ESC para voltar", Color.Gray, Color.Black);
+            Surface.PrintTexto(2, Height - 1, "Setas + Enter para escolher | I para inventário | ESC para voltar", Color.Gray, Color.Black);
         }
 
         private static IEnumerable<string> QuebrarLinhas(string texto, int larguraMaxima)

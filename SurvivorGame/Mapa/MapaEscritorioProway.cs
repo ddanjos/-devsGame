@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using SadConsole;
 using SadRogue.Primitives;
 using SurvivorGame.Utilitarios;
@@ -62,7 +62,11 @@ namespace SurvivorGame.Mapa
 
         public MapaEscritorioProway()
         {
-            _arte = ArteUtils.CarregarArteCenario(CaminhoXp);
+            // CarregarArteCenario pode devolver null (arte é enfeite, não derruba o
+            // jogo). Esta classe é do caminho antigo de exploração e hoje não é
+            // instanciada por ninguém, mas se voltar a ser, cai numa superfície
+            // vazia em vez de estourar NullReferenceException no construtor.
+            _arte = ArteUtils.CarregarArteCenario(CaminhoXp) ?? new ScreenSurface(1, 1);
             Largura = _arte.Width;
             Altura = _arte.Height;
 

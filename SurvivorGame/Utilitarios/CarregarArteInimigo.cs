@@ -1,74 +1,98 @@
-﻿using System.IO;
+using System;
+using System.Collections.Generic;
 using SadConsole;
 using SadConsole.Readers;
+using System.IO;
 
 namespace SurvivorGame.Utilitarios;
 
+/// <summary>
+/// Carrega arte REXPaint (.xp) do disco.
+///
+/// Duas coisas importantes acontecem aqui, e as duas vieram de problema real:
+///
+/// 1. RESOLUÇÃO DE CAMINHO. Os .xp são copiados pra pasta de saída, ao lado do
+///    executável, mas o caminho usado no código é relativo ("Artes/Cenarios/
+///    x.xp"). Um caminho relativo é resolvido contra o diretório de TRABALHO do
+///    processo, que nem sempre é a pasta do executável (atalho no desktop,
+///    "dotnet run" da raiz do repositório, arrastar o .exe). Por isso tentamos
+///    também contra AppContext.BaseDirectory, que é sempre a pasta do .exe.
+///    Também toleramos diferença de maiúsculas/minúsculas no nome do arquivo,
+///    que passa despercebida no Windows e quebra no Linux.
+///
+/// 2. FALHA SUAVE. Arte é enfeite, não regra: um .xp faltando ou corrompido NÃO
+///    pode fechar o jogo. Antes, CarregarArteCenario lançava exceção e a exceção
+///    subia pelo ProcessKeyboard, fechando a janela ao entrar num local. Agora
+///    devolve null e a tela simplesmente desenha sem fundo. Com 14 arquivos de
+///    arte no projeto, um erro de digitação em um nome não pode virar 14 formas
+///    novas de o jogo morrer.
+/// </summary>
 public static class ArteUtils
 {
+    /// <summary>Sprite de inimigo. Se não achar nada, cai no rato - assim o
+    /// combate nunca fica sem nenhum desenho.</summary>
     public static ScreenSurface CarregarArteInimigo(string caminhoXP)
     {
-        // Se o caminho direto não existir, tenta resolver problemas de letras maiúsculas/minúsculas
-        if (!File.Exists(caminhoXP))
-        {
-            string diretorio = Path.GetDirectoryName(caminhoXP) ?? "";
-            string nomeArquivo = Path.GetFileName(caminhoXP);
+        ScreenSurface? arte = TentarCarregar(caminhoXP);
+        if (arte is not null) return arte;
 
-            // Tenta achar forçando o nome do arquivo todo em minúsculo
-            string caminhoMinusculo = Path.Combine(diretorio, nomeArquivo.ToLower());
-            if (File.Exists(caminhoMinusculo))
-            {
-                caminhoXP = caminhoMinusculo;
-            }
-            // Tenta achar forçando a primeira letra em maiúsculo (PascalCase simples) se o de cima falhar
-            else if (nomeArquivo.Length > 0)
-            {
-                string caminhoPascal = Path.Combine(diretorio, char.ToUpper(nomeArquivo[0]) + nomeArquivo.Substring(1));
-                if (File.Exists(caminhoPascal))
-                {
-                    caminhoXP = caminhoPascal;
-                }
-                // Fallback de segurança extrema: se não achar nada na pasta de inimigos, usa o ratoselvagem para o jogo não travar
-                else if (caminhoXP.Contains("Inimigos"))
-                {
-                    caminhoXP = Path.Combine(diretorio, "ratoselvagem.xp");
-                }
-            }
-        }
-
-        return CarregarXP(caminhoXP);
+        return TentarCarregar(Path.Combine("Artes", "Inimigos", "ratoselvagem.xp"))
+               ?? new ScreenSurface(1, 1);
     }
 
-    /// <summary>
-    /// Mesma coisa que CarregarArteInimigo, só com um nome que deixa claro que
-    /// também serve pra carregar a arte de CENÁRIOS inteiros (não só sprites de
-    /// inimigo) - por exemplo os mapas de interior desenhados pelo Lindomar no
-    /// REXPaint (ver ExploracaoScreen, que mostra essa arte como tela de entrada).
-    /// </summary>
-    public static ScreenSurface CarregarArteCenario(string caminhoXP) => CarregarXP(caminhoXP);
+    /// <summary>Plano de fundo de um cenário (local do mapa ou tela de batalha).
+    /// Devolve null quando não dá pra carregar - quem chama desenha sem fundo.</summary>
+    public static ScreenSurface? CarregarArteCenario(string caminhoXP) => TentarCarregar(caminhoXP);
 
-    private static ScreenSurface CarregarXP(string caminhoXP)
+    private static ScreenSurface? TentarCarregar(string caminhoXP)
     {
-        if (!File.Exists(caminhoXP))
+        try
         {
-            throw new FileNotFoundException($"Arquivo de arte não encontrado em: {caminhoXP}");
+            string? encontrado = Resolver(caminhoXP);
+            if (encontrado is null) return null;
+
+            using Stream stream = File.OpenRead(encontrado);
+            REXPaintImage imagem = REXPaintImage.Load(stream);
+            ICellSurface[] camadas = imagem.ToCellSurface();
+
+            return camadas.Length == 0 ? null : new ScreenSurface(camadas[0]);
         }
+        catch
+        {
+            // .xp corrompido ou versão de formato que o SadRex não entende.
+            return null;
+        }
+    }
 
-        // 1. Carrega a imagem do REXPaint via Stream
-        using Stream stream = File.OpenRead(caminhoXP);
-        REXPaintImage rexImage = REXPaintImage.Load(stream);
+    /// <summary>Devolve o primeiro caminho que existe de verdade, ou null.</summary>
+    private static string? Resolver(string caminhoRelativo)
+    {
+        foreach (string candidato in Candidatos(caminhoRelativo))
+            if (File.Exists(candidato))
+                return candidato;
 
-        // 2. Converte a REXPaintImage em uma CellSurface (superfície de células do SadConsole)
-        // O método ToCellSurface() é o padrão mantido na API do SadConsole para converter .xp
-        ICellSurface[] camadas = rexImage.ToCellSurface();
+        return null;
+    }
 
-        // 3. Cria a ScreenSurface usando a superfície de células recém-gerada
-        ScreenSurface superficie = new ScreenSurface(camadas[0]);
+    private static IEnumerable<string> Candidatos(string caminho)
+    {
+        string pasta = Path.GetDirectoryName(caminho) ?? string.Empty;
+        string arquivo = Path.GetFileName(caminho);
 
-        return superficie;
+        string[] nomes =
+        {
+            arquivo,
+            arquivo.ToLowerInvariant(),
+            arquivo.Length > 0 ? char.ToUpperInvariant(arquivo[0]) + arquivo[1..] : arquivo,
+        };
+
+        // Primeiro relativo ao diretório de trabalho, depois ao do executável.
+        string[] raizes = { string.Empty, AppContext.BaseDirectory };
+
+        foreach (string raiz in raizes)
+            foreach (string nome in nomes)
+                yield return raiz.Length == 0
+                    ? Path.Combine(pasta, nome)
+                    : Path.Combine(raiz, pasta, nome);
     }
 }
-    
-
-
-

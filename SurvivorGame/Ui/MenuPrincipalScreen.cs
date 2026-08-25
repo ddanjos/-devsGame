@@ -40,6 +40,12 @@ namespace SurvivorGame.Ui
 
                 new("Novo Jogo", Program.IniciarNovaPartida),
 
+                new("Opcoes", () =>
+                {
+                    Game.Instance.Screen = new OpcoesScreen(this, Width, Height);
+                    Game.Instance.Screen.IsFocused = true;
+                }),
+
                 new("Sair do Jogo", () => Game.Instance.MonoGameInstance.Exit()),
             };
 

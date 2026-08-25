@@ -3,6 +3,7 @@ using SadConsole.Input;
 using SadRogue.Primitives;
 using SurvivorGame.Mapa;
 using System.Text;
+using SurvivorGame.Utilitarios;
 
 namespace SurvivorGame.Cenarios
 {
@@ -28,16 +29,16 @@ namespace SurvivorGame.Cenarios
             IsFocused = true;
 
             Surface.Clear();
-            Surface.Print(2, 2, local.Nome, Color.Gold, Color.Black);
+            Surface.PrintTexto(2, 2, local.Nome, Color.Gold, Color.Black);
 
             int linha = 4;
             foreach (string trecho in QuebrarLinhas(local.Descricao, largura - 4))
             {
-                Surface.Print(2, linha, trecho, Color.White, Color.Black);
+                Surface.PrintTexto(2, linha, trecho, Color.White, Color.Black);
                 linha++;
             }
 
-            Surface.Print(2, altura - 2, "Pressione ESC para voltar ao mapa", Color.Gray, Color.Black);
+            Surface.PrintTexto(2, altura - 2, "Pressione ESC para voltar ao mapa", Color.Gray, Color.Black);
         }
 
         public override bool ProcessKeyboard(Keyboard keyboard)

@@ -1,9 +1,10 @@
-using SadConsole;
+﻿using SadConsole;
 using SadConsole.Configuration;
 using SadRogue.Primitives;
 using SurvivorGame.Cenarios;
 using SurvivorGame.Mapa;
 using SurvivorGame.Ui;
+using SurvivorGame.Audio;
 
 namespace SurvivorGame
 {
@@ -40,6 +41,13 @@ namespace SurvivorGame
 
         private static void Game_Started(object? sender, GameHost host)
         {
+            // Áudio depois do host do MonoGame subir - antes disso não existe
+            // dispositivo pra criar SoundEffect. Se a máquina não tiver som, o
+            // GerenciadorSom se marca indisponível e tudo vira no-op.
+            SurvivorGame.Regras.Configuracao.Carregar();
+            GerenciadorSom.Iniciar();
+            GerenciadorSom.TocarTrilha(Trilha.Exploracao);
+
             MostrarMenuPrincipal();
         }
 
@@ -111,6 +119,8 @@ namespace SurvivorGame
             _inimigosNoMapa ??= new MapaInimigos();
 
             if (_personagem is null) return;
+
+            GerenciadorSom.TocarTrilha(Trilha.Exploracao);
 
             var mapaScreen = new MapaScreen(_terreno, _itensNoChao, _inimigosNoMapa, _personagem);
             Game.Instance.Screen = mapaScreen;

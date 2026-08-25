@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Jogo salvo do jogador (SCRUM-11) - estado local, nao vai pro repositorio
+savegame.json

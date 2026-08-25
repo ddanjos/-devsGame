@@ -4,7 +4,10 @@ using SadConsole.Input;
 using SadRogue.Primitives;
 using SurvivorGame.Combate;
 using SurvivorGame.Mapa;
+using SurvivorGame.Ui;
 using SurvivorGame.UI;
+using SurvivorGame.Utilitarios;
+using SurvivorGame.Audio;
 
 namespace SurvivorGame.Cenarios
 {
@@ -37,6 +40,10 @@ namespace SurvivorGame.Cenarios
         public MapaScreen(IMapa terreno, MapaJogo itensNoChao, MapaInimigos inimigosNoMapa, Personagem personagem)
             : base(terreno.Largura, terreno.Altura)
         {
+            // A ORDEM IMPORTA: _personagem tem que ser o ÚLTIMO. A guarda de null
+            // do OnFocused abaixo testa só ele, apostando que se ele já existe,
+            // todo o resto também existe. Reordenar estas quatro linhas transforma
+            // essa guarda numa NullReferenceException silenciosa.
             _terreno = terreno;
             _itensNoChao = itensNoChao;
             _inimigosNoMapa = inimigosNoMapa;
@@ -50,11 +57,48 @@ namespace SurvivorGame.Cenarios
             RedesenharMapaCompleto();
         }
 
+        /// <summary>Ver a guarda de ESC em ProcessKeyboard. Começa false a cada
+        /// vez que esta tela reganha o foco, porque a tecla que nos trouxe de volta
+        /// pode ainda estar pressionada.</summary>
+        private bool _escFoiSolto;
+
+        /// <summary>Redesenha ao reganhar o foco - ao voltar do pause, do
+        /// inventário ou de um local, a superfície ainda tem o desenho de antes.</summary>
+        public override void OnFocused()
+        {
+            base.OnFocused();
+            if (_personagem is null) return;
+
+            _escFoiSolto = false;
+            GerenciadorSom.TocarTrilha(Trilha.Exploracao);
+            AtualizarLocalProximo();
+            RedesenharMapaCompleto();
+        }
+
         public override bool ProcessKeyboard(Keyboard keyboard)
         {
+            // ESC abre o Menu de Pause (SCRUM-13). Só existe AQUI, no mapa: é de
+            // lá que se salva, e salvar só do mapa mantém o save simples e
+            // impossível de restaurar num estado quebrado (ver Regras/SaveJogo).
+            // O SadConsole repete tecla segurada (~25x/s depois de 0,8s). Sem esta
+            // guarda, segurar ESC fazia mapa e pause piscarem um no outro, e sair
+            // de um local com ESC segurado caía direto no menu de pause. Só
+            // aceitamos o ESC depois de ver um frame com ele solto.
+            if (!keyboard.IsKeyDown(Keys.Escape))
+                _escFoiSolto = true;
+
+            if (_escFoiSolto && keyboard.IsKeyPressed(Keys.Escape))
+            {
+                _escFoiSolto = false;
+                Game.Instance.Screen = new PauseScreen(
+                    _personagem, this, Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
+                Game.Instance.Screen.IsFocused = true;
+                return true;
+            }
+
             if (keyboard.IsKeyPressed(Keys.I))
             {
-                Game.Instance.Screen = new InventarioScreen(_personagem, this, Width, Height, _itensNoChao);
+                Game.Instance.Screen = new InventarioScreen(_personagem, this, Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY, _itensNoChao);
                 Game.Instance.Screen.IsFocused = true;
                 return true;
             }
@@ -126,8 +170,8 @@ namespace SurvivorGame.Cenarios
                     inimigoClicado,
                     _inimigosNoMapa,
                     this,
-                    Width,
-                    Height,
+                    Game.Instance.ScreenCellsX,
+                    Game.Instance.ScreenCellsY,
                     RedesenharMapaCompleto
                 );
 
@@ -159,13 +203,18 @@ namespace SurvivorGame.Cenarios
             ILocalExploravel? localJogavel = FabricaLocais.Criar(local.Nome);
             if (localJogavel is not null)
             {
-                var tela = new LocalExploravelScreen(localJogavel, _personagem, this, Width, Height);
+                // Tamanho da JANELA, não o do mapa: os planos de fundo do Lindomar
+                // são 60x60 e o mapa da cidade só tem 45 linhas - abrir o local no
+                // tamanho do mapa cortaria um quarto de cada desenho.
+                var tela = new LocalExploravelScreen(localJogavel, _personagem, this,
+                    Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
                 Game.Instance.Screen = tela;
                 Game.Instance.Screen.IsFocused = true;
                 return;
             }
 
-            var cenario = new CenarioLocalScreen(local, this, Width, Height);
+            var cenario = new CenarioLocalScreen(local, this,
+                Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY);
             Game.Instance.Screen = cenario;
             Game.Instance.Screen.IsFocused = true;
         }
@@ -185,9 +234,14 @@ namespace SurvivorGame.Cenarios
 
             Surface.SetGlyph(_personagem.X, _personagem.Y, '@', Color.LimeGreen, Color.Black);
 
-            Surface.Print(2, Height - 1, "Setas/WASD para mover | I para inventário", Color.Gray, Color.Black);
+            // Missão sempre à vista: sem isso o jogador junta as 3 peças e não
+            // descobre onde terminar o jogo (aconteceu em playtest).
+            Surface.PrintTexto(2, Height - 3, Regras.GerenciadorJogo.ResumoDaMissao,
+                Regras.GerenciadorJogo.PodeTransmitir ? Color.Gold : Color.LightGreen, Color.Black);
+
+            Surface.PrintTexto(2, Height - 1, "Setas/WASD para mover | E entrar | I inventário | ESC pausar", Color.Gray, Color.Black);
             if (!string.IsNullOrEmpty(_mensagem))
-                Surface.Print(2, Height - 2, _mensagem, Color.Yellow, Color.Black);
+                Surface.PrintTexto(2, Height - 2, _mensagem, Color.Yellow, Color.Black);
         }
     }
 }
