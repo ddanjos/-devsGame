@@ -79,31 +79,32 @@ namespace SurvivorGame.Combate
             }
             else
             {
-            _arteXP = arteXP;
-            _sessao = new SessaoCombate(jogador, inimigo);
+                _arteXP = arteXP;
+                _sessao = new SessaoCombate(jogador, inimigo);
 
-            UseKeyboard = true;
-            IsFocused = true;
+                UseKeyboard = true;
+                IsFocused = true;
 
-            _sessao.IniciarTurnoJogador();
+                _sessao.IniciarTurnoJogador();
 
 
-            // O primeiro turno já consome Fome/Sede e pode matar por inanição.
-            // Sem esta checagem o combate começava com o jogador em 0 de vida e
-            // seguia normalmente, e o aviso de inanição era descartado em silêncio.
-            if (!string.IsNullOrEmpty(_sessao.AvisoDeEstado))
-            {
-                MostrarMensagens(new[] { _sessao.AvisoDeEstado }, () =>
+                // O primeiro turno já consome Fome/Sede e pode matar por inanição.
+                // Sem esta checagem o combate começava com o jogador em 0 de vida e
+                // seguia normalmente, e o aviso de inanição era descartado em silêncio.
+                if (!string.IsNullOrEmpty(_sessao.AvisoDeEstado))
                 {
-                    if (_sessao.VerificarResultado() != ResultadoCombate.EmAndamento)
-                        Finalizar(_sessao.VerificarResultado());
-                    else
-                        VoltarParaMenuPrincipal();
-                });
-                return;
-            }
+                    MostrarMensagens(new[] { _sessao.AvisoDeEstado }, () =>
+                    {
+                        if (_sessao.VerificarResultado() != ResultadoCombate.EmAndamento)
+                            Finalizar(_sessao.VerificarResultado());
+                        else
+                            VoltarParaMenuPrincipal();
+                    });
+                    return;
+                }
 
-            Redesenhar();
+                Redesenhar();
+            }
         }
 
         public override bool ProcessKeyboard(Keyboard keyboard)

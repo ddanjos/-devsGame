@@ -109,7 +109,12 @@ namespace SurvivorGame
             new Habilidade("Golpe Forte", dano: 25, custoEnergia: 3)
         };
 
-        public Personagem(string nome, int xInicial, int yInicial)
+        /// <summary>capacidadeMochila é parâmetro opcional por causa do carregamento
+        /// de save (SCRUM-11): o tamanho da mochila é gravado no arquivo, e se o
+        /// construtor sempre forçasse 5, carregar uma partida com mochila maior
+        /// descartaria itens em silêncio. Todo o resto do jogo continua chamando com
+        /// três argumentos, como antes.</summary>
+        public Personagem(string nome, int xInicial, int yInicial, int capacidadeMochila = 5)
         {
             Nome = nome;
             Experiencia = 0;
@@ -120,7 +125,7 @@ namespace SurvivorGame
             X = xInicial;
             Y = yInicial;
 
-            Inventario = new InventarioPersonagem(5);
+            Inventario = new InventarioPersonagem(Math.Max(1, capacidadeMochila));
         }
 
         /// <summary>
@@ -178,6 +183,26 @@ namespace SurvivorGame
         {
             if (quantidade <= 0) return;
             Vida = Math.Max(0, Vida - quantidade);
+        }
+
+        /// <summary>
+        /// Reaplica um estado vindo do save (SCRUM-11). Existe como método próprio
+        /// - em vez de abrir os setters das propriedades - porque carregar um jogo
+        /// é a ÚNICA situação em que faz sentido escrever esses valores de fora.
+        /// Deixar Vida ou Fome com set público faria qualquer parte do código poder
+        /// mexer neles sem passar pelas regras de ReceberDano / ConsumirFome.
+        /// Ver Regras/SaveJogo.
+        /// </summary>
+        public void CarregarEstado(int vida, int vidaMaxima, int fome, int sede,
+            int experiencia, int forca, int defesaBase)
+        {
+            VidaMaxima = Math.Max(1, vidaMaxima);
+            Vida = Math.Clamp(vida, 0, VidaMaxima);
+            Fome = Math.Clamp(fome, 0, FomeMaxima);
+            Sede = Math.Clamp(sede, 0, SedeMaxima);
+            Experiencia = Math.Max(0, experiencia);
+            Forca = forca;
+            DefesaBase = defesaBase;
         }
 
         /// <summary>Estado do personagem (termo pedido pela disciplina): vivo,
