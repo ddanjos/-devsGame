@@ -22,6 +22,7 @@ namespace SurvivorGame.Combate
         private readonly IScreenObject _telaAnterior;
         private readonly SessaoCombate _sessao;
         private ScreenSurface? _arteXP;
+        private ScreenSurface _menuLayer;
         private readonly InimigoNoMapa? _inimigoNoMapa;
         private readonly MapaInimigos? _mapaInimigos;
         private readonly Action? _aoSairDoCombate;
@@ -81,6 +82,22 @@ namespace SurvivorGame.Combate
             {
                 _arteXP = arteXP;
             }
+
+            // Se a arte foi carregada com sucesso, força os pixels a serem quadrados (16x16)
+            if (_arteXP is not null)
+            {
+                _arteXP.FontSize = new Point(16, 16);
+
+                Children.Add(_arteXP);
+            }
+
+            
+            // Cria uma camada transparente para o texto com a mesma fonte padrão da CombateScreen
+            _menuLayer = new ScreenSurface(largura, altura);
+            _menuLayer.Surface.DefaultBackground = Color.Transparent; // Garante que o fundo seja transparente
+
+            // Ao adicionar o menu depois da arte do inimigo, o sadconsole renderiza por cima.
+            Children.Add(_menuLayer);
 
             UseKeyboard = true;
             IsFocused = true;
@@ -365,17 +382,24 @@ namespace SurvivorGame.Combate
 
         private void Redesenhar()
         {
+            // Limpa a tela de fundo e a camada do menu da frente
             Surface.Clear();
+            _menuLayer.Surface.Clear();
 
-            Surface.Print(2, 2, _sessao.Inimigo.Nome, Color.OrangeRed, Color.Black);
-            Surface.Print(2, 3, $"HP: {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
-
+            // Posiciona a arte do inimigo no fundo normalmente
             if (_arteXP is not null)
             {
-                int posX = (Width / 2) - (_arteXP.Width / 2);
+                int centroTelaPixels = (Width * 8) / 2;
+                int metadeCaoPixels = (_arteXP.Width * 16) / 2;
+                int posX = (centroTelaPixels - metadeCaoPixels) / 16;
                 int posY = 4;
-                _arteXP.Surface.Copy(this.Surface, posX, posY);
+
+                _arteXP.Position = new Point(posX, posY);
             }
+
+            // Desenha o cabeçalho do inimigo na camada de texto (na frente de tudo)
+            _menuLayer.Surface.Print(2, 2, _sessao.Inimigo.Nome, Color.OrangeRed, Color.Transparent);
+            _menuLayer.Surface.Print(2, 3, $"HP: {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Transparent);
 
             switch (_fase)
             {
@@ -390,7 +414,7 @@ namespace SurvivorGame.Combate
                         .Select(h => h.CustoEnergia > 0 ? $"{h.Nome} ({h.CustoEnergia} energia)" : h.Nome)
                         .ToArray();
                     DesenharMenu(nomesHabilidades, Height - 7);
-                    Surface.Print(2, Height - 1, "ESC para voltar", Color.Gray, Color.Black);
+                    _menuLayer.Surface.Print(2, Height - 1, "ESC para voltar", Color.Gray, Color.Transparent);
                     break;
 
                 case Fase.MenuItens:
@@ -399,28 +423,47 @@ namespace SurvivorGame.Combate
                         ? _itensDisponiveis.Select(i => $"{i.Nome} x{i.Quantidade} (cura {i.Cura})").ToArray()
                         : new[] { "(nenhum item disponível)" };
                     DesenharMenu(nomesItens, Height - 7);
-                    Surface.Print(2, Height - 1, "ESC para voltar", Color.Gray, Color.Black);
+                    _menuLayer.Surface.Print(2, Height - 1, "ESC para voltar", Color.Gray, Color.Transparent);
                     break;
 
                 case Fase.VendoStatus:
-                    Surface.Print(2, 5, $"Rodada {_sessao.Rodada}  |  Iniciativa: {_sessao.Iniciativa}", Color.Cyan, Color.Black);
-                    Surface.Print(2, 6, $"{_sessao.Inimigo.Nome} - HP {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Black);
-                    Surface.Print(2, 7, $"   Forca: {_sessao.Inimigo.Forca}   Defesa: {_sessao.Inimigo.Defesa}", Color.Gray, Color.Black);
-                    Surface.Print(2, 9, $"{_sessao.Jogador.Nome} - HP {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}", Color.White, Color.Black);
-                    Surface.Print(2, 10, $"   Forca: {_sessao.Jogador.Forca}   Defesa: {_sessao.Jogador.Defesa}", Color.Gray, Color.Black);
-                    Surface.Print(2, 11, $"Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.Cyan, Color.Black);
-                    Surface.Print(2, Height - 1, "Pressione qualquer tecla para voltar (seu turno continua)", Color.Gray, Color.Black);
+                    _menuLayer.Surface.Print(2, 5, $"Rodada {_sessao.Rodada}  |  Iniciativa: {_sessao.Iniciativa}", Color.Cyan, Color.Transparent);
+                    _menuLayer.Surface.Print(2, 6, $"{_sessao.Inimigo.Nome} - HP {_sessao.Inimigo.VidaAtual}/{_sessao.Inimigo.VidaMaxima}", Color.White, Color.Transparent);
+                    _menuLayer.Surface.Print(2, 7, $"   Forca: {_sessao.Inimigo.Forca}   Defesa: {_sessao.Inimigo.Defesa}", Color.Gray, Color.Transparent);
+                    _menuLayer.Surface.Print(2, 9, $"{_sessao.Jogador.Nome} - HP {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}", Color.White, Color.Transparent);
+                    _menuLayer.Surface.Print(2, 10, $"   Forca: {_sessao.Jogador.Forca}   Defesa: {_sessao.Jogador.Defesa}", Color.Gray, Color.Transparent);
+                    _menuLayer.Surface.Print(2, 11, $"Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.Cyan, Color.Transparent);
+                    _menuLayer.Surface.Print(2, Height - 1, "Pressione qualquer tecla para voltar (seu turno continua)", Color.Gray, Color.Transparent);
                     break;
 
                 case Fase.Mensagem:
                     DesenharStatusJogador();
                     if (_filaMensagens.Count > 0)
-                        Surface.Print(2, Height - 6, _filaMensagens.Peek(), Color.Yellow, Color.Black);
-                    Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black); break;
-                case Fase.FimDeCombate: string textoFinal = _resultadoFinal switch { ResultadoCombate.Vitoria => $"Você derrotou {_sessao.Inimigo.Nome}!{_mensagemRecompensa}", ResultadoCombate.Derrota => $"{_sessao.Jogador.Nome} foi derrotado...", ResultadoCombate.Fugiu => "Você fugiu da batalha.", _ => "" }; Surface.Print(2, Height / 2, textoFinal, Color.White, Color.Black); Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Black); break;
+                        _menuLayer.Surface.Print(2, Height - 6, _filaMensagens.Peek(), Color.Yellow, Color.Transparent);
+                    _menuLayer.Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Transparent);
+                    break;
+
+                case Fase.FimDeCombate:
+                    string textoFinal = _resultadoFinal switch
+                    {
+                        ResultadoCombate.Vitoria => $"Você derrotou {_sessao.Inimigo.Nome}!{_mensagemRecompensa}",
+                        ResultadoCombate.Derrota => $"{_sessao.Jogador.Nome} foi derrotado...",
+                        ResultadoCombate.Fugiu => "Você fugiu da batalha.",
+                        _ => ""
+                    };
+                    _menuLayer.Surface.Print(2, Height / 2, textoFinal, Color.White, Color.Transparent);
+                    _menuLayer.Surface.Print(2, Height - 1, "Pressione qualquer tecla para continuar", Color.Gray, Color.Transparent);
+                    break;
             }
         }
-        private void DesenharStatusJogador() { int y = Height - 10; Surface.Print(2, y, $"{_sessao.Jogador.Nome}   Rodada {_sessao.Rodada}   Iniciativa: {_sessao.Iniciativa}", Color.LimeGreen, Color.Black); Surface.Print(2, y + 1, $"HP: {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}   Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.White, Color.Black); }
+
+        private void DesenharStatusJogador()
+        {
+            int y = Height - 10;
+            _menuLayer.Surface.Print(2, y, $"{_sessao.Jogador.Nome}   Rodada {_sessao.Rodada}   Iniciativa: {_sessao.Iniciativa}", Color.LimeGreen, Color.Transparent);
+            _menuLayer.Surface.Print(2, y + 1, $"HP: {_sessao.Jogador.Vida}/{_sessao.Jogador.VidaMaxima}   Fome: {_sessao.Jogador.Fome}   Sede: {_sessao.Jogador.Sede}   Energia: {_sessao.Energia}", Color.White, Color.Transparent);
+        }
+
         private void DesenharMenu(System.Collections.Generic.IReadOnlyList<string> opcoes, int yInicial)
         {
             for (int i = 0; i < opcoes.Count; i++)
@@ -428,9 +471,10 @@ namespace SurvivorGame.Combate
                 bool selecionado = i == _indiceSelecionado;
                 string prefixo = selecionado ? "> " : "  ";
                 Color cor = selecionado ? Color.Yellow : Color.White;
-                Surface.Print(2, yInicial + i, prefixo + opcoes[i], cor, Color.Black);
+                _menuLayer.Surface.Print(2, yInicial + i, prefixo + opcoes[i], cor, Color.Transparent);
             }
         }
+
 
     }
 }
